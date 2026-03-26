@@ -16,6 +16,7 @@ import Marketplace from "./pages/Marketplace";
 import AgentDashboard from "./pages/AgentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import WalletPage from "./pages/Wallet";
+import ContractView from "./pages/ContractView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
