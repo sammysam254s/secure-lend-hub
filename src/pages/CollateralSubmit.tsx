@@ -31,7 +31,7 @@ const CollateralSubmit = () => {
       item_type: form.item_type,
       brand_model: form.brand_model,
       market_value: Number(form.market_value),
-      status: 'verified',
+      status: 'pending',
     });
 
     if (err) { setError(err.message); setLoading(false); return; }

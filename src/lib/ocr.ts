@@ -1,16 +1,3 @@
-export const extractTextFromImage = async (imageFile: File, simulatedText: string = ''): Promise<string> => {
-  try {
-    // Simulate a 3-second OCR scan delay
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Return the simulated text (we pass the user's input to automatically "pass" the check for the demo)
-    return simulatedText.toLowerCase();
-  } catch (error) {
-    console.error('OCR Simulation failed:', error);
-    throw new Error('Failed to read ID image');
-  }
-};
-
 export const verifyKycDetails = (
   extractedText: string,
   fullName: string,
@@ -42,13 +29,10 @@ export const verifyKycDetails = (
     score -= 30;
   }
 
-  // Verify DOB (often formats like DD/MM/YYYY or DD.MM.YYYY get misread, so we check just the year/month pieces roughly)
+  // Verify DOB
   const dobParts = dob.split('-'); // incoming from <input type="date"> (YYYY-MM-DD)
   if (dobParts.length === 3) {
     const year = dobParts[0];
-    const month = dobParts[1];
-    
-    // As long as the year is present, we consider it a loose pass for the demo
     if (!text.includes(year) && !text.includes(year.slice(-2))) {
       errors.push('Birth year not detected.');
       score -= 30;

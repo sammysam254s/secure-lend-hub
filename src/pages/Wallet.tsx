@@ -18,7 +18,6 @@ const WalletPage = () => {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ type: '', amount: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [simStep, setSimStep] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -50,16 +49,6 @@ const WalletPage = () => {
 
     const newBalance = form.type === 'deposit' ? currentBalance + amount : currentBalance - amount;
 
-    // Simulate M-Pesa Transaction Phases
-    setSimStep('Initiating M-Pesa Request...');
-    await new Promise(r => setTimeout(r, 1500));
-    
-    setSimStep('Waiting for user PIN...');
-    await new Promise(r => setTimeout(r, 2000));
-    
-    setSimStep('Verifying Transaction...');
-    await new Promise(r => setTimeout(r, 1000));
-
     const uppercaseType = form.type.charAt(0).toUpperCase() + form.type.slice(1);
 
     const { error: txError } = await supabase.from('wallet_transactions').insert({
@@ -88,7 +77,6 @@ const WalletPage = () => {
     setTransactions(data || []);
     setForm({ type: '', amount: '' });
     setSubmitting(false);
-    setSimStep('');
     toast.success(`${form.type === 'deposit' ? 'Deposit' : 'Withdrawal'} successful!`);
   };
 
@@ -135,7 +123,7 @@ const WalletPage = () => {
                 </div>
                 <Button type="submit" disabled={submitting || !form.type} className="w-full sm:w-auto">
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {submitting ? (simStep || 'Processing...') : 'Submit'}
+                  {submitting ? 'Processing...' : 'Submit'}
                 </Button>
               </form>
             </CardContent>

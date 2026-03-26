@@ -8,15 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { extractTextFromImage, verifyKycDetails } from '@/lib/ocr';
 import { toast } from 'sonner';
+
 const KYC = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ full_name: '', id_number: '', date_of_birth: '' });
   const [files, setFiles] = useState<{ [key: string]: File | null }>({ id_front: null, id_back: null, selfie: null, signature: null });
   const [loading, setLoading] = useState(false);
-  const [ocrProgress, setOcrProgress] = useState('');
   const [error, setError] = useState('');
 
   const uploadFile = async (file: File, path: string): Promise<string | null> => {
@@ -30,7 +29,6 @@ const KYC = () => {
     e.preventDefault();
     if (!profile) return;
     setError('');
-    setOcrProgress('');
     setLoading(true);
 
     if (!files.id_front || !files.id_back || !files.selfie || !files.signature) {
@@ -40,20 +38,6 @@ const KYC = () => {
     }
 
     try {
-      setOcrProgress('Running AI OCR on ID Document...');
-      const fallbackSimulatedText = `${form.full_name} ${form.id_number} ${form.date_of_birth}`;
-      const extractedText = await extractTextFromImage(files.id_front as File, fallbackSimulatedText);
-      
-      setOcrProgress('Verifying matching details...');
-      const validation = verifyKycDetails(extractedText, form.full_name, form.id_number, form.date_of_birth);
-      
-      if (!validation.isVerified) {
-        setError(`Verification Failed: ${validation.errors.join(' ')}`);
-        setLoading(false);
-        return;
-      }
-      
-      setOcrProgress('Uploading secure documents...');
       const urls: Record<string, string | null> = {};
       for (const [key, file] of Object.entries(files)) {
         if (file) {
@@ -61,7 +45,6 @@ const KYC = () => {
         }
       }
 
-      setOcrProgress('Finalizing Verification...');
       const { error: err } = await supabase.from('kyc_verifications').upsert({
         user_id: profile.id,
         full_name: form.full_name,
@@ -75,20 +58,17 @@ const KYC = () => {
         has_id_back_image: !!urls.id_back,
         has_selfie_image: !!urls.selfie,
         has_signature_image: !!urls.signature,
-        status: 'verified',
-        verification_score: validation.score,
-        verified_at: new Date().toISOString()
+        status: 'pending',
       }, { onConflict: 'user_id' });
 
-      if (err) { setError(err.message); setLoading(false); setOcrProgress(''); return; }
-      
-      toast.success('KYC Verified successfully via OCR');
+      if (err) { setError(err.message); setLoading(false); return; }
+
+      toast.success('KYC submitted successfully. Awaiting admin review.');
       navigate('/borrower');
     } catch (err: any) {
       setError(err.message || 'Failed to submit KYC');
     } finally {
       setLoading(false);
-      setOcrProgress('');
     }
   };
 
@@ -128,7 +108,7 @@ const KYC = () => {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {loading ? (ocrProgress || 'Submitting...') : 'Submit KYC'}
+                {loading ? 'Submitting...' : 'Submit KYC'}
               </Button>
             </form>
           </CardContent>

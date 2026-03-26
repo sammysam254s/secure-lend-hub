@@ -26,11 +26,12 @@ const LoanApply = () => {
   useEffect(() => {
     if (!profile) return;
     const fetchData = async () => {
-      const [collateralRes] = await Promise.all([
+      const [collateralRes, kycRes] = await Promise.all([
         supabase.from('collateral').select('*').eq('user_id', profile.id).eq('status', 'verified'),
+        supabase.from('kyc_verifications').select('status').eq('user_id', profile.id).single(),
       ]);
       setCollateral(collateralRes.data || []);
-      setKycVerified(true);
+      setKycVerified(kycRes.data?.status === 'verified');
       setPageLoading(false);
     };
     fetchData();
