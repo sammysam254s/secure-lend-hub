@@ -13,7 +13,7 @@ const AgentDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-    const { data } = await supabase.from('collateral').select('*, users!collateral_user_id_fkey(username, email)').eq('status', 'pending');
+    const { data } = await supabase.from('collateral').select('*').eq('status', 'pending');
     setCollateral(data || []);
     setLoading(false);
   };
