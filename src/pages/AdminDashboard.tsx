@@ -1,32 +1,38 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Users, CreditCard, TrendingUp, DollarSign, CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { formatKES, getStatusColor } from '@/lib/formatters';
+import AdminStats from '@/components/admin/AdminStats';
+import UsersTab from '@/components/admin/UsersTab';
+import PayoutsTab from '@/components/admin/PayoutsTab';
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
   const [collateral, setCollateral] = useState<any[]>([]);
   const [kyc, setKyc] = useState<any[]>([]);
+  const [commissions, setCommissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-    const [usersRes, loansRes, collateralRes, kycRes] = await Promise.all([
+    const [usersRes, loansRes, collateralRes, kycRes, commissionsRes] = await Promise.all([
       supabase.from('users').select('*'),
       supabase.from('loans').select('*'),
       supabase.from('collateral').select('*'),
       supabase.from('kyc_verifications').select('*'),
+      supabase.from('commissions').select('*'),
     ]);
     setUsers(usersRes.data || []);
     setLoans(loansRes.data || []);
     setCollateral(collateralRes.data || []);
     setKyc(kycRes.data || []);
+    setCommissions(commissionsRes.data || []);
     setLoading(false);
   };
 
@@ -47,64 +53,19 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
 
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
-          {[
-            { label: 'Total Users', value: users.length, icon: Users },
-            { label: 'Total Loans', value: loans.length, icon: CreditCard },
-            { label: 'Total Invested', value: formatKES(totalInvested), icon: TrendingUp },
-            { label: 'Platform Fees', value: formatKES(platformFees), icon: DollarSign },
-          ].map((s) => (
-            <Card key={s.label} className="border-0 shadow-sm">
-              <CardContent className="flex items-center gap-4 pt-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <s.icon className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{s.label}</p>
-                  <p className="text-xl font-bold">{s.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <AdminStats usersCount={users.length} loansCount={loans.length} totalInvested={totalInvested} platformFees={platformFees} />
 
         <Tabs defaultValue="users">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="loans">Loans</TabsTrigger>
             <TabsTrigger value="collateral">Collateral</TabsTrigger>
             <TabsTrigger value="kyc">KYC</TabsTrigger>
+            <TabsTrigger value="payouts">Agent Payouts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
-            <Card className="border-0 shadow-sm mt-4">
-              <CardHeader><CardTitle>All Users</CardTitle></CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Balance</TableHead>
-                      <TableHead>Active</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map(u => (
-                      <TableRow key={u.id}>
-                        <TableCell>{u.username}</TableCell>
-                        <TableCell>{u.email}</TableCell>
-                        <TableCell><Badge className={getStatusColor(u.role === 'admin' ? 'listed' : 'active')}>{u.role}</Badge></TableCell>
-                        <TableCell>{formatKES(Number(u.wallet_balance || 0))}</TableCell>
-                        <TableCell>{u.is_active ? '✅' : '❌'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <UsersTab users={users} onRefresh={fetchData} />
           </TabsContent>
 
           <TabsContent value="loans">
@@ -202,6 +163,10 @@ const AdminDashboard = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="payouts">
+            <PayoutsTab commissions={commissions} users={users} onRefresh={fetchData} />
           </TabsContent>
         </Tabs>
       </div>
