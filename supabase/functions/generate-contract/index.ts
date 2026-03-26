@@ -336,6 +336,7 @@ Deno.serve(async (req) => {
     <table style="width:100%;border-collapse:collapse;font-size:11px;">
       <thead>
         <tr style="background:#2e7d32;color:white;">
+          <th style="border:1px solid #ddd;padding:8px;text-align:center;">Photo</th>
           <th style="border:1px solid #ddd;padding:8px;text-align:left;">Username</th>
           <th style="border:1px solid #ddd;padding:8px;text-align:left;">Email</th>
           <th style="border:1px solid #ddd;padding:8px;text-align:left;">Phone</th>
