@@ -18,10 +18,10 @@ const Index = () => {
             Kenya's trusted peer-to-peer lending platform. Borrow against your assets or earn 13% monthly returns as a lender.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <Button size="lg" variant="secondary" asChild>
+            <Button size="lg" variant="secondary" className="bg-white text-primary font-semibold hover:bg-white/90" asChild>
               <Link to="/register">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" asChild>
+            <Button size="lg" variant="outline" className="border-2 border-white text-white bg-transparent hover:bg-white/20 font-semibold" asChild>
               <Link to="/login">Sign In</Link>
             </Button>
           </div>

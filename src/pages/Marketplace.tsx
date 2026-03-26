@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
@@ -16,6 +17,7 @@ import { Label } from '@/components/ui/label';
 
 const Marketplace = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [loans, setLoans] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,9 +53,21 @@ const Marketplace = () => {
     // Update funded_amount
     const loan = loans.find(l => l.id === loanId);
     if (loan) {
+      const newFunded = Number(loan.funded_amount || 0) + Number(investAmount);
       await supabase.from('loans').update({
-        funded_amount: Number(loan.funded_amount || 0) + Number(investAmount),
+        funded_amount: newFunded,
       }).eq('id', loanId);
+
+      // Check if fully funded → generate contract
+      if (newFunded >= Number(loan.principal_amount)) {
+        try {
+          await supabase.functions.invoke('generate-contract', {
+            body: { loan_id: loanId },
+          });
+        } catch (e) {
+          console.error('Contract generation error:', e);
+        }
+      }
     }
 
     setInvestAmount('');
@@ -150,22 +164,28 @@ const Marketplace = () => {
               <p className="text-muted-foreground">No investments yet.</p>
             ) : (
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Amount Invested</TableHead>
-                    <TableHead>Expected Return (13%/mo)</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {investments.map(inv => (
-                    <TableRow key={inv.id}>
-                      <TableCell>{formatKES(Number(inv.amount_invested))}</TableCell>
-                      <TableCell>{formatKES(Number(inv.amount_invested) * 0.13)}/month</TableCell>
-                      <TableCell>{new Date(inv.date || inv.created_at).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>Amount Invested</TableHead>
+                     <TableHead>Expected Return (13%/mo)</TableHead>
+                     <TableHead>Date</TableHead>
+                     <TableHead>Contract</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {investments.map(inv => (
+                     <TableRow key={inv.id}>
+                       <TableCell>{formatKES(Number(inv.amount_invested))}</TableCell>
+                       <TableCell>{formatKES(Number(inv.amount_invested) * 0.13)}/month</TableCell>
+                       <TableCell>{new Date(inv.date || inv.created_at).toLocaleDateString()}</TableCell>
+                       <TableCell>
+                         <Button size="sm" variant="outline" onClick={() => navigate(`/contract/${inv.loan_id}`)}>
+                           View Contract
+                         </Button>
+                       </TableCell>
+                     </TableRow>
+                   ))}
+                 </TableBody>
               </Table>
             )}
           </TabsContent>

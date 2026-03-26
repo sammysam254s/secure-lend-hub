@@ -16,6 +16,7 @@ import Marketplace from "./pages/Marketplace";
 import AgentDashboard from "./pages/AgentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import WalletPage from "./pages/Wallet";
+import ContractView from "./pages/ContractView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/agent" element={<ProtectedRoute allowedRoles={['agent']}><AgentDashboard /></ProtectedRoute>} />
             <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
+            <Route path="/contract/:loanId" element={<ProtectedRoute><ContractView /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
