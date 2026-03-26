@@ -53,9 +53,21 @@ const Marketplace = () => {
     // Update funded_amount
     const loan = loans.find(l => l.id === loanId);
     if (loan) {
+      const newFunded = Number(loan.funded_amount || 0) + Number(investAmount);
       await supabase.from('loans').update({
-        funded_amount: Number(loan.funded_amount || 0) + Number(investAmount),
+        funded_amount: newFunded,
       }).eq('id', loanId);
+
+      // Check if fully funded → generate contract
+      if (newFunded >= Number(loan.principal_amount)) {
+        try {
+          await supabase.functions.invoke('generate-contract', {
+            body: { loan_id: loanId },
+          });
+        } catch (e) {
+          console.error('Contract generation error:', e);
+        }
+      }
     }
 
     setInvestAmount('');
