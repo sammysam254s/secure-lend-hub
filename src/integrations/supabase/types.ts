@@ -574,6 +574,7 @@ export type Database = {
           total_value: number
         }[]
       }
+      is_admin: { Args: { auth_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
