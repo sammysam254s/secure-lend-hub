@@ -10,7 +10,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import BorrowerDashboard from "./pages/BorrowerDashboard";
 import LoanApply from "./pages/LoanApply";
-import CollateralSubmit from "./pages/CollateralSubmit";
 import KYC from "./pages/KYC";
 import Marketplace from "./pages/Marketplace";
 import AgentDashboard from "./pages/AgentDashboard";
@@ -35,7 +34,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/borrower" element={<ProtectedRoute allowedRoles={['borrower']}><BorrowerDashboard /></ProtectedRoute>} />
             <Route path="/borrower/loan-apply" element={<ProtectedRoute allowedRoles={['borrower']}><LoanApply /></ProtectedRoute>} />
-            <Route path="/borrower/collateral-submit" element={<ProtectedRoute allowedRoles={['borrower']}><CollateralSubmit /></ProtectedRoute>} />
+            <Route path="/borrower/collateral-submit" element={<ProtectedRoute allowedRoles={['borrower']}><LoanApply /></ProtectedRoute>} />
             <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
             <Route path="/marketplace" element={<ProtectedRoute allowedRoles={['lender']}><Marketplace /></ProtectedRoute>} />
             <Route path="/agent" element={<ProtectedRoute allowedRoles={['agent']}><AgentDashboard /></ProtectedRoute>} />

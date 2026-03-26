@@ -27,7 +27,12 @@ const Marketplace = () => {
 
   const fetchData = async () => {
     const [loansRes, investRes] = await Promise.all([
-      supabase.from('loans').select('*, collateral(*)').eq('status', 'listed'),
+      // Show all loans that need funding — listed or pending_collateral
+      supabase
+        .from('loans')
+        .select('*, collateral(*)')
+        .in('status', ['listed', 'pending_collateral'])
+        .order('created_at', { ascending: false }),
       profile ? supabase.from('investments').select('*, loans(*)').eq('lender_id', profile.id) : { data: [] },
     ]);
     setLoans(loansRes.data || []);
@@ -42,31 +47,79 @@ const Marketplace = () => {
     setInvesting(true);
     setInvestError('');
 
-    const { error } = await supabase.from('investments').insert({
-      lender_id: profile.id,
-      loan_id: loanId,
-      amount_invested: Number(investAmount),
+    const amount = Number(investAmount);
+    const lenderBalance = Number(profile.wallet_balance || 0);
+
+    if (amount > lenderBalance) {
+      setInvestError('Insufficient wallet balance. Please deposit funds first.');
+      setInvesting(false);
+      return;
+    }
+
+    const loan = loans.find(l => l.id === loanId);
+    if (!loan) { setInvesting(false); return; }
+
+    const principal = Number(loan.principal_amount);
+    const funded = Number(loan.funded_amount || 0);
+    const remaining = principal - funded;
+
+    if (amount > remaining) {
+      setInvestError(`Maximum you can invest is ${formatKES(remaining)}`);
+      setInvesting(false);
+      return;
+    }
+
+    // Deduct from lender wallet
+    const newLenderBalance = lenderBalance - amount;
+    const { error: walletErr } = await supabase.from('users')
+      .update({ wallet_balance: newLenderBalance })
+      .eq('id', profile.id);
+    if (walletErr) { setInvestError(walletErr.message); setInvesting(false); return; }
+
+    // Record lender wallet transaction
+    await supabase.from('wallet_transactions').insert({
+      user_id: profile.id,
+      transaction_type: 'withdrawal',
+      amount,
+      balance_after: newLenderBalance,
+      description: `Investment in loan ${loanId.slice(0, 8)}`,
     });
 
-    if (error) { setInvestError(error.message); setInvesting(false); return; }
+    // Record investment
+    const { error: invErr } = await supabase.from('investments').insert({
+      lender_id: profile.id,
+      loan_id: loanId,
+      amount_invested: amount,
+    });
+    if (invErr) { setInvestError(invErr.message); setInvesting(false); return; }
 
-    // Update funded_amount
-    const loan = loans.find(l => l.id === loanId);
-    if (loan) {
-      const newFunded = Number(loan.funded_amount || 0) + Number(investAmount);
-      await supabase.from('loans').update({
-        funded_amount: newFunded,
-      }).eq('id', loanId);
+    const newFunded = funded + amount;
+    const fullyFunded = newFunded >= principal;
 
-      // Check if fully funded → generate contract
-      if (newFunded >= Number(loan.principal_amount)) {
-        try {
-          await supabase.functions.invoke('generate-contract', {
-            body: { loan_id: loanId },
-          });
-        } catch (e) {
-          console.error('Contract generation error:', e);
-        }
+    // Update loan funded amount (and status if fully funded)
+    await supabase.from('loans').update({
+      funded_amount: newFunded,
+      ...(fullyFunded ? { status: 'active' } : {}),
+    }).eq('id', loanId);
+
+    if (fullyFunded) {
+      // Disburse principal to borrower wallet
+      const { data: borrower } = await supabase.from('users').select('wallet_balance').eq('id', loan.borrower_id).single();
+      const borrowerNewBalance = Number(borrower?.wallet_balance || 0) + principal;
+      await supabase.from('users').update({ wallet_balance: borrowerNewBalance }).eq('id', loan.borrower_id);
+      await supabase.from('wallet_transactions').insert({
+        user_id: loan.borrower_id,
+        transaction_type: 'deposit',
+        amount: principal,
+        balance_after: borrowerNewBalance,
+        description: `Loan disbursement`,
+      });
+
+      // Generate contract
+      try {
+        await supabase.functions.invoke('generate-contract', { body: { loan_id: loanId } });
+      } catch (e) {
+        console.error('Contract generation error:', e);
       }
     }
 
@@ -111,6 +164,9 @@ const Marketplace = () => {
                           <div className="text-sm space-y-1">
                             <p><strong>Collateral:</strong> {collateralData.item_type} - {collateralData.brand_model}</p>
                             <p><strong>Value:</strong> {formatKES(Number(collateralData.market_value))}</p>
+                            {collateralData.status !== 'verified' && (
+                              <p className="text-xs text-amber-600">⏳ Collateral pending agent verification</p>
+                            )}
                           </div>
                         )}
                         <div className="text-sm space-y-1">
@@ -129,7 +185,10 @@ const Marketplace = () => {
                       <CardFooter>
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button className="w-full"><TrendingUp className="h-4 w-4 mr-1" /> Invest</Button>
+                            <Button className="w-full" disabled={collateralData?.status !== 'verified'}>
+                              <TrendingUp className="h-4 w-4 mr-1" />
+                              {collateralData?.status !== 'verified' ? 'Awaiting Verification' : 'Invest'}
+                            </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader><DialogTitle>Invest in Loan</DialogTitle></DialogHeader>
