@@ -229,7 +229,12 @@ Deno.serve(async (req) => {
     const lenderRows = (investments || [])
       .map((inv: any) => {
         const lender = lenders.find((l: any) => l.id === inv.lender_id);
+        const lenderKyc = lenderKycMap[inv.lender_id];
+        const selfieImg = lenderKyc?.selfie_image_url
+          ? `<img src="${lenderKyc.selfie_image_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #ccc;" />`
+          : `<span style="display:inline-block;width:40px;height:40px;border-radius:50%;background:#e0e0e0;text-align:center;line-height:40px;font-size:16px;">👤</span>`;
         return `<tr>
+          <td style="border:1px solid #ddd;padding:8px;text-align:center;">${selfieImg}</td>
           <td style="border:1px solid #ddd;padding:8px;">${lender?.username || "N/A"}</td>
           <td style="border:1px solid #ddd;padding:8px;">${lender?.email || "N/A"}</td>
           <td style="border:1px solid #ddd;padding:8px;">${lender?.phone_number || "N/A"}</td>
