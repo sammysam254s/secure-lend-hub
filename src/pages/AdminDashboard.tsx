@@ -50,18 +50,18 @@ const AdminDashboard = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Admin Dashboard</h1>
 
         <AdminStats usersCount={users.length} loansCount={loans.length} totalInvested={totalInvested} platformFees={platformFees} />
 
         <Tabs defaultValue="users">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="loans">Loans</TabsTrigger>
-            <TabsTrigger value="collateral">Collateral</TabsTrigger>
-            <TabsTrigger value="kyc">KYC</TabsTrigger>
-            <TabsTrigger value="payouts">Agent Payouts</TabsTrigger>
+          <TabsList className="w-full flex overflow-x-auto">
+            <TabsTrigger value="users" className="flex-1 text-xs sm:text-sm">Users</TabsTrigger>
+            <TabsTrigger value="loans" className="flex-1 text-xs sm:text-sm">Loans</TabsTrigger>
+            <TabsTrigger value="collateral" className="flex-1 text-xs sm:text-sm">Collateral</TabsTrigger>
+            <TabsTrigger value="kyc" className="flex-1 text-xs sm:text-sm">KYC</TabsTrigger>
+            <TabsTrigger value="payouts" className="flex-1 text-xs sm:text-sm">Payouts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -70,13 +70,13 @@ const AdminDashboard = () => {
 
           <TabsContent value="loans">
             <Card className="border-0 shadow-sm mt-4">
-              <CardHeader><CardTitle>All Loans</CardTitle></CardHeader>
-              <CardContent>
+              <CardHeader><CardTitle className="text-lg">All Loans</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Amount</TableHead>
-                      <TableHead>Duration</TableHead>
+                      <TableHead className="hidden sm:table-cell">Duration</TableHead>
                       <TableHead>Funded</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -84,10 +84,10 @@ const AdminDashboard = () => {
                   <TableBody>
                     {loans.map(l => (
                       <TableRow key={l.id}>
-                        <TableCell>{formatKES(Number(l.principal_amount))}</TableCell>
-                        <TableCell>{l.duration_months} months</TableCell>
-                        <TableCell>{formatKES(Number(l.funded_amount || 0))}</TableCell>
-                        <TableCell><Badge className={getStatusColor(l.status)}>{l.status}</Badge></TableCell>
+                        <TableCell className="text-sm">{formatKES(Number(l.principal_amount))}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{l.duration_months}mo</TableCell>
+                        <TableCell className="text-sm">{formatKES(Number(l.funded_amount || 0))}</TableCell>
+                        <TableCell><Badge className={`${getStatusColor(l.status)} text-xs`}>{l.status}</Badge></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -98,13 +98,13 @@ const AdminDashboard = () => {
 
           <TabsContent value="collateral">
             <Card className="border-0 shadow-sm mt-4">
-              <CardHeader><CardTitle>All Collateral</CardTitle></CardHeader>
-              <CardContent>
+              <CardHeader><CardTitle className="text-lg">All Collateral</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Type</TableHead>
-                      <TableHead>Brand/Model</TableHead>
+                      <TableHead className="hidden sm:table-cell">Brand/Model</TableHead>
                       <TableHead>Value</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -112,10 +112,10 @@ const AdminDashboard = () => {
                   <TableBody>
                     {collateral.map(c => (
                       <TableRow key={c.id}>
-                        <TableCell>{c.item_type}</TableCell>
-                        <TableCell>{c.brand_model}</TableCell>
-                        <TableCell>{formatKES(Number(c.market_value))}</TableCell>
-                        <TableCell><Badge className={getStatusColor(c.status)}>{c.status}</Badge></TableCell>
+                        <TableCell className="text-sm">{c.item_type}</TableCell>
+                        <TableCell className="hidden sm:table-cell text-sm">{c.brand_model}</TableCell>
+                        <TableCell className="text-sm">{formatKES(Number(c.market_value))}</TableCell>
+                        <TableCell><Badge className={`${getStatusColor(c.status)} text-xs`}>{c.status}</Badge></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -126,14 +126,13 @@ const AdminDashboard = () => {
 
           <TabsContent value="kyc">
             <Card className="border-0 shadow-sm mt-4">
-              <CardHeader><CardTitle>KYC Verifications</CardTitle></CardHeader>
-              <CardContent>
+              <CardHeader><CardTitle className="text-lg">KYC Verifications</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>ID Number</TableHead>
-                      <TableHead>DOB</TableHead>
+                      <TableHead className="hidden sm:table-cell">ID Number</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -141,18 +140,20 @@ const AdminDashboard = () => {
                   <TableBody>
                     {kyc.map(k => (
                       <TableRow key={k.id}>
-                        <TableCell>{k.full_name}</TableCell>
-                        <TableCell>{k.id_number}</TableCell>
-                        <TableCell>{k.date_of_birth}</TableCell>
-                        <TableCell><Badge className={getStatusColor(k.status)}>{k.status}</Badge></TableCell>
+                        <TableCell className="text-sm">
+                          {k.full_name}
+                          <span className="block sm:hidden text-xs text-muted-foreground">{k.id_number}</span>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell text-sm">{k.id_number}</TableCell>
+                        <TableCell><Badge className={`${getStatusColor(k.status)} text-xs`}>{k.status}</Badge></TableCell>
                         <TableCell>
                           {k.status === 'pending' && (
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => handleKycAction(k.id, 'verified')}>
-                                <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                            <div className="flex gap-1">
+                              <Button size="sm" className="h-7 text-xs px-2" onClick={() => handleKycAction(k.id, 'verified')}>
+                                <CheckCircle className="h-3 w-3 mr-1" /> Approve
                               </Button>
-                              <Button size="sm" variant="destructive" onClick={() => handleKycAction(k.id, 'rejected')}>
-                                <XCircle className="h-4 w-4 mr-1" /> Reject
+                              <Button size="sm" variant="destructive" className="h-7 text-xs px-2" onClick={() => handleKycAction(k.id, 'rejected')}>
+                                <XCircle className="h-3 w-3 mr-1" /> Reject
                               </Button>
                             </div>
                           )}

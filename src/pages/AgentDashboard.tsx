@@ -4,7 +4,6 @@ import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { formatKES, getStatusColor } from '@/lib/formatters';
 
@@ -22,9 +21,7 @@ const AgentDashboard = () => {
 
   const handleAction = async (id: string, status: string) => {
     await supabase.from('collateral').update({ status, verification_date: new Date().toISOString() }).eq('id', id);
-
     if (status === 'verified') {
-      // Find loan with this collateral and set to listed
       await supabase.from('loans').update({ status: 'listed' }).eq('collateral_id', id).eq('status', 'pending_collateral');
     }
     fetchData();
@@ -34,45 +31,37 @@ const AgentDashboard = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Agent Dashboard</h1>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Agent Dashboard</h1>
         <Card className="border-0 shadow-sm">
-          <CardHeader><CardTitle>Pending Collateral Verifications</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Pending Collateral Verifications</CardTitle></CardHeader>
           <CardContent>
-            {collateral.length === 0 ? <p className="text-muted-foreground">No pending collateral.</p> : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Submitter</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Brand/Model</TableHead>
-                    <TableHead>Market Value</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {collateral.map(c => (
-                    <TableRow key={c.id}>
-                      <TableCell>{c.users?.username || 'N/A'}</TableCell>
-                      <TableCell>{c.item_type}</TableCell>
-                      <TableCell>{c.brand_model}</TableCell>
-                      <TableCell>{formatKES(Number(c.market_value))}</TableCell>
-                      <TableCell><Badge className={getStatusColor(c.status)}>{c.status}</Badge></TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => handleAction(c.id, 'verified')}>
-                            <CheckCircle className="h-4 w-4 mr-1" /> Approve
+            {collateral.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No pending collateral.</p>
+            ) : (
+              <div className="space-y-3">
+                {collateral.map(c => (
+                  <Card key={c.id} className="border shadow-none">
+                    <CardContent className="p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm">{c.item_type} — {c.brand_model}</p>
+                          <p className="text-sm text-muted-foreground">Value: {formatKES(Number(c.market_value))}</p>
+                          <Badge className={`${getStatusColor(c.status)} text-xs mt-1`}>{c.status}</Badge>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button size="sm" className="h-8 text-xs" onClick={() => handleAction(c.id, 'verified')}>
+                            <CheckCircle className="h-3 w-3 mr-1" /> Approve
                           </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleAction(c.id, 'released')}>
-                            <XCircle className="h-4 w-4 mr-1" /> Reject
+                          <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={() => handleAction(c.id, 'released')}>
+                            <XCircle className="h-3 w-3 mr-1" /> Reject
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
