@@ -49,14 +49,12 @@ const WalletPage = () => {
 
     const newBalance = form.type === 'deposit' ? currentBalance + amount : currentBalance - amount;
 
-    const uppercaseType = form.type.charAt(0).toUpperCase() + form.type.slice(1);
-
     const { error: txError } = await supabase.from('wallet_transactions').insert({
       user_id: profile.id,
-      transaction_type: uppercaseType,
+      transaction_type: form.type, // 'deposit' or 'withdrawal' — lowercase to match DB constraint
       amount,
       balance_after: newBalance,
-      description: `${uppercaseType} of ${formatKES(amount)}`,
+      description: `${form.type === 'deposit' ? 'Deposit' : 'Withdrawal'} of ${formatKES(amount)}`,
     });
 
     if (txError) { setError(txError.message); setSubmitting(false); return; }
@@ -140,8 +138,8 @@ const WalletPage = () => {
                   <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg border">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <Badge className={tx.transaction_type.toLowerCase() === 'deposit' ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-amber-100 text-amber-700 text-xs'}>
-                          {tx.transaction_type}
+                        <Badge className={tx.transaction_type === 'deposit' ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-amber-100 text-amber-700 text-xs'}>
+                          {tx.transaction_type.charAt(0).toUpperCase() + tx.transaction_type.slice(1)}
                         </Badge>
                         <span className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</span>
                       </div>

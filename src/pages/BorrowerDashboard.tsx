@@ -7,24 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, CreditCard, Package, DollarSign, Wallet, Plus, FileCheck } from 'lucide-react';
+import { Loader2, CreditCard, Package, DollarSign, Wallet, Plus, FileCheck, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { formatKES, getStatusColor } from '@/lib/formatters';
 
 const BorrowerDashboard = () => {
   const { profile } = useAuth();
   const [loans, setLoans] = useState<any[]>([]);
   const [collateral, setCollateral] = useState<any[]>([]);
+  const [kycStatus, setKycStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!profile) return;
     const fetchData = async () => {
-      const [loansRes, collateralRes] = await Promise.all([
+      const [loansRes, collateralRes, kycRes] = await Promise.all([
         supabase.from('loans').select('*').eq('borrower_id', profile.id),
         supabase.from('collateral').select('*').eq('user_id', profile.id),
+        supabase.from('kyc_verifications').select('status').eq('user_id', profile.id).maybeSingle(),
       ]);
       setLoans(loansRes.data || []);
       setCollateral(collateralRes.data || []);
+      setKycStatus(kycRes.data?.status || null);
       setLoading(false);
     };
     fetchData();
@@ -39,7 +42,18 @@ const BorrowerDashboard = () => {
   return (
     <Layout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Borrower Dashboard</h1>
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold">Borrower Dashboard</h1>
+          {kycStatus === 'verified' ? (
+            <Badge className="bg-green-100 text-green-700 flex items-center gap-1 text-xs">
+              <ShieldCheck className="h-3 w-3" /> Verified
+            </Badge>
+          ) : (
+            <Badge className="bg-amber-100 text-amber-700 flex items-center gap-1 text-xs">
+              <ShieldAlert className="h-3 w-3" /> {kycStatus === 'pending' ? 'KYC Pending' : 'KYC Required'}
+            </Badge>
+          )}
+        </div>
 
         {/* Stats */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-6">
