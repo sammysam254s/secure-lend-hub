@@ -344,7 +344,7 @@ Deno.serve(async (req) => {
           <th style="border:1px solid #ddd;padding:8px;text-align:left;">Date</th>
         </tr>
       </thead>
-      <tbody>${lenderRows || '<tr><td colspan="5" style="border:1px solid #ddd;padding:8px;text-align:center;color:#999;">No investors</td></tr>'}</tbody>
+      <tbody>${lenderRows || '<tr><td colspan="6" style="border:1px solid #ddd;padding:8px;text-align:center;color:#999;">No investors</td></tr>'}</tbody>
     </table>
   </div>
 
