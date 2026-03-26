@@ -298,9 +298,10 @@ Deno.serve(async (req) => {
   <!-- KYC Documents -->
   <div style="margin-bottom:20px;">
     <h3 style="color:#2e7d32;margin:0 0 10px;font-size:14px;">BORROWER KYC DOCUMENTS</h3>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
       <div><p style="font-size:11px;font-weight:bold;margin:0 0 4px;">ID Front:</p>${idFrontImg}</div>
       <div><p style="font-size:11px;font-weight:bold;margin:0 0 4px;">ID Back:</p>${idBackImg}</div>
+      <div><p style="font-size:11px;font-weight:bold;margin:0 0 4px;">Borrower Selfie:</p>${selfieImg}</div>
     </div>
     <div style="margin-top:12px;"><p style="font-size:11px;font-weight:bold;margin:0 0 4px;">Borrower Signature:</p>${signatureImg}</div>
   </div>
