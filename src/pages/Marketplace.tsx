@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 
 const Marketplace = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [loans, setLoans] = useState<any[]>([]);
   const [investments, setInvestments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
