@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Wallet as WalletIcon } from 'lucide-react';
 import { formatKES } from '@/lib/formatters';
+import { toast } from 'sonner';
 
 const WalletPage = () => {
   const { profile, refreshProfile } = useAuth();
@@ -17,6 +18,7 @@ const WalletPage = () => {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ type: '', amount: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [simStep, setSimStep] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -34,13 +36,29 @@ const WalletPage = () => {
     const amount = Number(form.amount);
     const currentBalance = Number(profile.wallet_balance || 0);
 
+    if (isNaN(amount) || amount <= 0) {
+      setError('Please enter a valid positive amount.');
+      setSubmitting(false);
+      return;
+    }
+
     if (form.type === 'withdrawal' && amount > currentBalance) {
-      setError('Insufficient balance');
+      setError('Insufficient balance.');
       setSubmitting(false);
       return;
     }
 
     const newBalance = form.type === 'deposit' ? currentBalance + amount : currentBalance - amount;
+
+    // Simulate M-Pesa Transaction Phases
+    setSimStep('Initiating M-Pesa Request...');
+    await new Promise(r => setTimeout(r, 1500));
+    
+    setSimStep('Waiting for user PIN...');
+    await new Promise(r => setTimeout(r, 2000));
+    
+    setSimStep('Verifying Transaction...');
+    await new Promise(r => setTimeout(r, 1000));
 
     const { error: txError } = await supabase.from('wallet_transactions').insert({
       user_id: profile.id,
@@ -52,13 +70,24 @@ const WalletPage = () => {
 
     if (txError) { setError(txError.message); setSubmitting(false); return; }
 
-    await supabase.from('users').update({ wallet_balance: newBalance }).eq('id', profile.id);
+    const { error: updateError } = await supabase.from('users')
+      .update({ wallet_balance: newBalance })
+      .eq('id', profile.id);
+
+    if (updateError) {
+      setError(updateError.message);
+      setSubmitting(false);
+      return;
+    }
+
     await refreshProfile();
 
     const { data } = await supabase.from('wallet_transactions').select('*').eq('user_id', profile.id).order('created_at', { ascending: false });
     setTransactions(data || []);
     setForm({ type: '', amount: '' });
     setSubmitting(false);
+    setSimStep('');
+    toast.success(`${form.type === 'deposit' ? 'Deposit' : 'Withdrawal'} successful!`);
   };
 
   if (loading) return <Layout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></Layout>;
@@ -104,7 +133,7 @@ const WalletPage = () => {
                 </div>
                 <Button type="submit" disabled={submitting || !form.type} className="w-full sm:w-auto">
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {submitting ? 'Processing...' : 'Submit'}
+                  {submitting ? (simStep || 'Processing...') : 'Submit'}
                 </Button>
               </form>
             </CardContent>
