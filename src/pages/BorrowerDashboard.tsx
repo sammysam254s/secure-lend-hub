@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, CreditCard, Package, DollarSign, Wallet, Plus, FileCheck, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Loader2, CreditCard, Package, DollarSign, Wallet, Plus, FileCheck, ShieldCheck, ShieldAlert, FileText } from 'lucide-react';
 import { formatKES, getStatusColor } from '@/lib/formatters';
 
 const BorrowerDashboard = () => {
@@ -82,6 +82,7 @@ const BorrowerDashboard = () => {
           <Button size="sm" asChild><Link to="/borrower/loan-apply"><Plus className="h-4 w-4 mr-1" /> Apply for Loan</Link></Button>
           <Button size="sm" variant="outline" asChild><Link to="/borrower/collateral-submit"><Package className="h-4 w-4 mr-1" /> Submit Collateral</Link></Button>
           <Button size="sm" variant="outline" asChild><Link to="/kyc"><FileCheck className="h-4 w-4 mr-1" /> KYC Verification</Link></Button>
+          <Button size="sm" variant="outline" asChild><Link to="/contracts"><FileText className="h-4 w-4 mr-1" /> My Contracts</Link></Button>
         </div>
 
         {/* Loans Table */}
