@@ -173,12 +173,24 @@ Deno.serve(async (req) => {
     // Fetch lender details
     const lenderIds = (investments || []).map((i: any) => i.lender_id);
     let lenders: any[] = [];
+    let lenderKycMap: Record<string, any> = {};
     if (lenderIds.length > 0) {
       const { data: lenderData } = await supabase
         .from("users")
         .select("id, username, email, phone_number, national_id")
         .in("id", lenderIds);
       lenders = lenderData || [];
+
+      // Fetch lender KYC data for selfie images
+      const { data: lenderKycData } = await supabase
+        .from("kyc_verifications")
+        .select("user_id, selfie_image_url, full_name")
+        .in("user_id", lenderIds);
+      if (lenderKycData) {
+        for (const k of lenderKycData) {
+          lenderKycMap[k.user_id] = k;
+        }
+      }
     }
 
     // Calculate financials
