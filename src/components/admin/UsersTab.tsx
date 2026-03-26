@@ -34,9 +34,6 @@ const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
 
     setAdding(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
       const response = await supabase.functions.invoke('admin-create-user', {
         body: {
           email: newUser.email,
@@ -92,28 +89,28 @@ const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
 
   return (
     <Card className="border-0 shadow-sm mt-4">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>All Users</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
+        <CardTitle className="text-lg">All Users ({users.length})</CardTitle>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><UserPlus className="h-4 w-4 mr-1" /> Add User</Button>
+            <Button size="sm" className="h-8 text-xs sm:text-sm"><UserPlus className="h-4 w-4 mr-1" /> Add User</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Add New User</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>First Name</Label><Input value={newUser.first_name} onChange={e => setNewUser(p => ({ ...p, first_name: e.target.value }))} /></div>
-                <div><Label>Last Name</Label><Input value={newUser.last_name} onChange={e => setNewUser(p => ({ ...p, last_name: e.target.value }))} /></div>
+                <div><Label className="text-xs">First Name</Label><Input className="h-9" value={newUser.first_name} onChange={e => setNewUser(p => ({ ...p, first_name: e.target.value }))} /></div>
+                <div><Label className="text-xs">Last Name</Label><Input className="h-9" value={newUser.last_name} onChange={e => setNewUser(p => ({ ...p, last_name: e.target.value }))} /></div>
               </div>
-              <div><Label>Username *</Label><Input value={newUser.username} onChange={e => setNewUser(p => ({ ...p, username: e.target.value }))} /></div>
-              <div><Label>Email *</Label><Input type="email" value={newUser.email} onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} /></div>
-              <div><Label>Password *</Label><Input type="password" value={newUser.password} onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} placeholder="Min 6 characters" /></div>
-              <div><Label>Phone *</Label><Input value={newUser.phone_number} onChange={e => setNewUser(p => ({ ...p, phone_number: e.target.value }))} /></div>
-              <div><Label>National ID *</Label><Input value={newUser.national_id} onChange={e => setNewUser(p => ({ ...p, national_id: e.target.value }))} /></div>
+              <div><Label className="text-xs">Username *</Label><Input className="h-9" value={newUser.username} onChange={e => setNewUser(p => ({ ...p, username: e.target.value }))} /></div>
+              <div><Label className="text-xs">Email *</Label><Input className="h-9" type="email" value={newUser.email} onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} /></div>
+              <div><Label className="text-xs">Password *</Label><Input className="h-9" type="password" value={newUser.password} onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} placeholder="Min 6 characters" /></div>
+              <div><Label className="text-xs">Phone *</Label><Input className="h-9" value={newUser.phone_number} onChange={e => setNewUser(p => ({ ...p, phone_number: e.target.value }))} /></div>
+              <div><Label className="text-xs">National ID *</Label><Input className="h-9" value={newUser.national_id} onChange={e => setNewUser(p => ({ ...p, national_id: e.target.value }))} /></div>
               <div>
-                <Label>Role</Label>
+                <Label className="text-xs">Role</Label>
                 <Select value={newUser.role} onValueChange={v => setNewUser(p => ({ ...p, role: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="lender">Lender</SelectItem>
                     <SelectItem value="agent">Agent</SelectItem>
@@ -129,14 +126,14 @@ const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Username</TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead>User</TableHead>
+              <TableHead className="hidden sm:table-cell">Email</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Balance</TableHead>
+              <TableHead className="hidden md:table-cell">Balance</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -144,22 +141,25 @@ const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
           <TableBody>
             {users.map(u => (
               <TableRow key={u.id}>
-                <TableCell className="font-medium">{u.username}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell><Badge className={getStatusColor(u.role === 'admin' ? 'listed' : 'active')}>{u.role}</Badge></TableCell>
-                <TableCell>{formatKES(Number(u.wallet_balance || 0))}</TableCell>
+                <TableCell className="text-sm font-medium">
+                  {u.username}
+                  <span className="block sm:hidden text-xs text-muted-foreground truncate max-w-[120px]">{u.email}</span>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell text-sm">{u.email}</TableCell>
+                <TableCell><Badge className={`${getStatusColor(u.role === 'admin' ? 'listed' : 'active')} text-xs`}>{u.role}</Badge></TableCell>
+                <TableCell className="hidden md:table-cell text-sm">{formatKES(Number(u.wallet_balance || 0))}</TableCell>
                 <TableCell>
-                  <Badge variant={u.is_active ? 'default' : 'destructive'}>
+                  <Badge variant={u.is_active ? 'default' : 'destructive'} className="text-xs">
                     {u.is_active ? 'Active' : 'Suspended'}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   {u.email !== 'sammyseth260@gmail.com' && (
                     <div className="flex gap-1">
-                      <Button size="sm" variant="outline" onClick={() => handleSuspend(u.id, u.is_active)}>
+                      <Button size="sm" variant="outline" className="h-7 w-7 p-0" onClick={() => handleSuspend(u.id, u.is_active)}>
                         {u.is_active ? <Ban className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(u.id, u.email)}>
+                      <Button size="sm" variant="destructive" className="h-7 w-7 p-0" onClick={() => handleDelete(u.id, u.email)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>

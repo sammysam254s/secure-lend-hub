@@ -38,11 +38,11 @@ const BorrowerDashboard = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Borrower Dashboard</h1>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Borrower Dashboard</h1>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-6">
           {[
             { label: 'Active Loans', value: activeLoans, icon: CreditCard },
             { label: 'Pending Collateral', value: pendingCollateral, icon: Package },
@@ -50,13 +50,13 @@ const BorrowerDashboard = () => {
             { label: 'Wallet Balance', value: formatKES(Number(profile?.wallet_balance || 0)), icon: Wallet },
           ].map((s) => (
             <Card key={s.label} className="border-0 shadow-sm">
-              <CardContent className="flex items-center gap-4 pt-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <s.icon className="h-6 w-6 text-primary" />
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <s.icon className="h-5 w-5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{s.label}</p>
-                  <p className="text-xl font-bold">{s.value}</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">{s.label}</p>
+                  <p className="text-lg font-bold truncate">{s.value}</p>
                 </div>
               </CardContent>
             </Card>
@@ -64,23 +64,22 @@ const BorrowerDashboard = () => {
         </div>
 
         {/* Quick Links */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          <Button asChild><Link to="/borrower/loan-apply"><Plus className="h-4 w-4 mr-1" /> Apply for Loan</Link></Button>
-          <Button variant="outline" asChild><Link to="/borrower/collateral-submit"><Package className="h-4 w-4 mr-1" /> Submit Collateral</Link></Button>
-          <Button variant="outline" asChild><Link to="/kyc"><FileCheck className="h-4 w-4 mr-1" /> KYC Verification</Link></Button>
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Button size="sm" asChild><Link to="/borrower/loan-apply"><Plus className="h-4 w-4 mr-1" /> Apply for Loan</Link></Button>
+          <Button size="sm" variant="outline" asChild><Link to="/borrower/collateral-submit"><Package className="h-4 w-4 mr-1" /> Submit Collateral</Link></Button>
+          <Button size="sm" variant="outline" asChild><Link to="/kyc"><FileCheck className="h-4 w-4 mr-1" /> KYC Verification</Link></Button>
         </div>
 
         {/* Loans Table */}
-        <Card className="border-0 shadow-sm mb-8">
-          <CardHeader><CardTitle>My Loans</CardTitle></CardHeader>
-          <CardContent>
-            {loans.length === 0 ? <p className="text-muted-foreground">No loans yet.</p> : (
+        <Card className="border-0 shadow-sm mb-6">
+          <CardHeader><CardTitle className="text-lg">My Loans</CardTitle></CardHeader>
+          <CardContent className="overflow-x-auto">
+            {loans.length === 0 ? <p className="text-muted-foreground text-sm">No loans yet.</p> : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Interest</TableHead>
+                    <TableHead className="hidden sm:table-cell">Duration</TableHead>
                     <TableHead>Funded</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -88,11 +87,10 @@ const BorrowerDashboard = () => {
                 <TableBody>
                   {loans.map(loan => (
                     <TableRow key={loan.id}>
-                      <TableCell>{formatKES(Number(loan.principal_amount))}</TableCell>
-                      <TableCell>{loan.duration_months} months</TableCell>
-                      <TableCell>{loan.interest_rate}%</TableCell>
-                      <TableCell>{formatKES(Number(loan.funded_amount || 0))}</TableCell>
-                      <TableCell><Badge className={getStatusColor(loan.status)}>{loan.status}</Badge></TableCell>
+                      <TableCell className="text-sm">{formatKES(Number(loan.principal_amount))}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm">{loan.duration_months}mo</TableCell>
+                      <TableCell className="text-sm">{formatKES(Number(loan.funded_amount || 0))}</TableCell>
+                      <TableCell><Badge className={`${getStatusColor(loan.status)} text-xs`}>{loan.status}</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -103,25 +101,28 @@ const BorrowerDashboard = () => {
 
         {/* Collateral Table */}
         <Card className="border-0 shadow-sm">
-          <CardHeader><CardTitle>My Collateral</CardTitle></CardHeader>
-          <CardContent>
-            {collateral.length === 0 ? <p className="text-muted-foreground">No collateral submitted.</p> : (
+          <CardHeader><CardTitle className="text-lg">My Collateral</CardTitle></CardHeader>
+          <CardContent className="overflow-x-auto">
+            {collateral.length === 0 ? <p className="text-muted-foreground text-sm">No collateral submitted.</p> : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Type</TableHead>
-                    <TableHead>Brand/Model</TableHead>
-                    <TableHead>Market Value</TableHead>
+                    <TableHead className="hidden sm:table-cell">Brand/Model</TableHead>
+                    <TableHead>Value</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {collateral.map(c => (
                     <TableRow key={c.id}>
-                      <TableCell>{c.item_type}</TableCell>
-                      <TableCell>{c.brand_model}</TableCell>
-                      <TableCell>{formatKES(Number(c.market_value))}</TableCell>
-                      <TableCell><Badge className={getStatusColor(c.status)}>{c.status}</Badge></TableCell>
+                      <TableCell className="text-sm">
+                        {c.item_type}
+                        <span className="block sm:hidden text-xs text-muted-foreground">{c.brand_model}</span>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm">{c.brand_model}</TableCell>
+                      <TableCell className="text-sm">{formatKES(Number(c.market_value))}</TableCell>
+                      <TableCell><Badge className={`${getStatusColor(c.status)} text-xs`}>{c.status}</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
