@@ -173,12 +173,24 @@ Deno.serve(async (req) => {
     // Fetch lender details
     const lenderIds = (investments || []).map((i: any) => i.lender_id);
     let lenders: any[] = [];
+    let lenderKycMap: Record<string, any> = {};
     if (lenderIds.length > 0) {
       const { data: lenderData } = await supabase
         .from("users")
         .select("id, username, email, phone_number, national_id")
         .in("id", lenderIds);
       lenders = lenderData || [];
+
+      // Fetch lender KYC data for selfie images
+      const { data: lenderKycData } = await supabase
+        .from("kyc_verifications")
+        .select("user_id, selfie_image_url, full_name")
+        .in("user_id", lenderIds);
+      if (lenderKycData) {
+        for (const k of lenderKycData) {
+          lenderKycMap[k.user_id] = k;
+        }
+      }
     }
 
     // Calculate financials
@@ -217,7 +229,12 @@ Deno.serve(async (req) => {
     const lenderRows = (investments || [])
       .map((inv: any) => {
         const lender = lenders.find((l: any) => l.id === inv.lender_id);
+        const lenderKyc = lenderKycMap[inv.lender_id];
+        const selfieImg = lenderKyc?.selfie_image_url
+          ? `<img src="${lenderKyc.selfie_image_url}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #ccc;" />`
+          : `<span style="display:inline-block;width:40px;height:40px;border-radius:50%;background:#e0e0e0;text-align:center;line-height:40px;font-size:16px;">👤</span>`;
         return `<tr>
+          <td style="border:1px solid #ddd;padding:8px;text-align:center;">${selfieImg}</td>
           <td style="border:1px solid #ddd;padding:8px;">${lender?.username || "N/A"}</td>
           <td style="border:1px solid #ddd;padding:8px;">${lender?.email || "N/A"}</td>
           <td style="border:1px solid #ddd;padding:8px;">${lender?.phone_number || "N/A"}</td>
@@ -242,6 +259,9 @@ Deno.serve(async (req) => {
       : `<p style="color:#999;font-style:italic;">Not provided</p>`;
     const idBackImg = kyc?.id_back_image_url
       ? `<img src="${kyc.id_back_image_url}" style="max-width:250px;max-height:160px;border:1px solid #ccc;border-radius:4px;" />`
+      : `<p style="color:#999;font-style:italic;">Not provided</p>`;
+    const selfieImg = kyc?.selfie_image_url
+      ? `<img src="${kyc.selfie_image_url}" style="max-width:150px;max-height:150px;border:1px solid #ccc;border-radius:50%;object-fit:cover;" />`
       : `<p style="color:#999;font-style:italic;">Not provided</p>`;
     const signatureImg = kyc?.signature_image_url
       ? `<img src="${kyc.signature_image_url}" style="max-width:200px;max-height:80px;border:1px solid #ccc;border-radius:4px;" />`
@@ -278,9 +298,10 @@ Deno.serve(async (req) => {
   <!-- KYC Documents -->
   <div style="margin-bottom:20px;">
     <h3 style="color:#2e7d32;margin:0 0 10px;font-size:14px;">BORROWER KYC DOCUMENTS</h3>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
       <div><p style="font-size:11px;font-weight:bold;margin:0 0 4px;">ID Front:</p>${idFrontImg}</div>
       <div><p style="font-size:11px;font-weight:bold;margin:0 0 4px;">ID Back:</p>${idBackImg}</div>
+      <div><p style="font-size:11px;font-weight:bold;margin:0 0 4px;">Borrower Selfie:</p>${selfieImg}</div>
     </div>
     <div style="margin-top:12px;"><p style="font-size:11px;font-weight:bold;margin:0 0 4px;">Borrower Signature:</p>${signatureImg}</div>
   </div>
@@ -319,6 +340,7 @@ Deno.serve(async (req) => {
     <table style="width:100%;border-collapse:collapse;font-size:11px;">
       <thead>
         <tr style="background:#2e7d32;color:white;">
+          <th style="border:1px solid #ddd;padding:8px;text-align:center;">Photo</th>
           <th style="border:1px solid #ddd;padding:8px;text-align:left;">Username</th>
           <th style="border:1px solid #ddd;padding:8px;text-align:left;">Email</th>
           <th style="border:1px solid #ddd;padding:8px;text-align:left;">Phone</th>
@@ -326,7 +348,7 @@ Deno.serve(async (req) => {
           <th style="border:1px solid #ddd;padding:8px;text-align:left;">Date</th>
         </tr>
       </thead>
-      <tbody>${lenderRows || '<tr><td colspan="5" style="border:1px solid #ddd;padding:8px;text-align:center;color:#999;">No investors</td></tr>'}</tbody>
+      <tbody>${lenderRows || '<tr><td colspan="6" style="border:1px solid #ddd;padding:8px;text-align:center;color:#999;">No investors</td></tr>'}</tbody>
     </table>
   </div>
 
