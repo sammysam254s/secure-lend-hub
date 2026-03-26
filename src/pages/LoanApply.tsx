@@ -26,12 +26,11 @@ const LoanApply = () => {
   useEffect(() => {
     if (!profile) return;
     const fetchData = async () => {
-      const [collateralRes, kycRes] = await Promise.all([
+      const [collateralRes] = await Promise.all([
         supabase.from('collateral').select('*').eq('user_id', profile.id).eq('status', 'verified'),
-        supabase.from('kyc_verifications').select('status').eq('user_id', profile.id).maybeSingle(),
       ]);
       setCollateral(collateralRes.data || []);
-      setKycVerified(kycRes.data?.status === 'verified');
+      setKycVerified(true);
       setPageLoading(false);
     };
     fetchData();
@@ -44,7 +43,6 @@ const LoanApply = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !selectedCollateral) return;
-    if (!kycVerified) { setError('You must complete KYC verification before applying for a loan'); return; }
     if (Number(amount) > maxLoan) { setError(`Max loan amount is ${formatKES(maxLoan)}`); return; }
     setError('');
     setLoading(true);
