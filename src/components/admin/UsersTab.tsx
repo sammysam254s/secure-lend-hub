@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Ban, Trash2, UserCheck } from 'lucide-react';
+import { UserPlus, Ban, Trash2, UserCheck, Loader2 } from 'lucide-react';
 import { formatKES, getStatusColor } from '@/lib/formatters';
 import { toast } from 'sonner';
 
@@ -19,24 +19,51 @@ interface UsersTabProps {
 
 const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
   const [addOpen, setAddOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ username: '', email: '', phone_number: '', national_id: '', role: 'lender', first_name: '', last_name: '' });
+  const [adding, setAdding] = useState(false);
+  const [newUser, setNewUser] = useState({ username: '', email: '', phone_number: '', national_id: '', role: 'lender', first_name: '', last_name: '', password: '' });
 
   const handleAddUser = async () => {
-    if (!newUser.username || !newUser.email || !newUser.phone_number || !newUser.national_id) {
-      toast.error('Please fill all required fields');
+    if (!newUser.username || !newUser.email || !newUser.phone_number || !newUser.national_id || !newUser.password) {
+      toast.error('Please fill all required fields including password');
       return;
     }
-    const { error } = await supabase.from('users').insert({
-      ...newUser,
-      auth_user_id: null,
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`${newUser.role} added successfully`);
-      setAddOpen(false);
-      setNewUser({ username: '', email: '', phone_number: '', national_id: '', role: 'lender', first_name: '', last_name: '' });
-      onRefresh();
+    if (newUser.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setAdding(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      const response = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: newUser.email,
+          password: newUser.password,
+          username: newUser.username,
+          phone_number: newUser.phone_number,
+          national_id: newUser.national_id,
+          role: newUser.role,
+          first_name: newUser.first_name,
+          last_name: newUser.last_name,
+        },
+      });
+
+      if (response.error) {
+        toast.error(response.error.message || 'Failed to create user');
+      } else if (response.data?.error) {
+        toast.error(response.data.error);
+      } else {
+        toast.success(`${newUser.role} added successfully with login credentials`);
+        setAddOpen(false);
+        setNewUser({ username: '', email: '', phone_number: '', national_id: '', role: 'lender', first_name: '', last_name: '', password: '' });
+        onRefresh();
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create user');
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -50,7 +77,7 @@ const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
   };
 
   const handleDelete = async (userId: string, email: string) => {
-    if (email === 'ammyseth260@gmail.com') {
+    if (email === 'sammyseth260@gmail.com') {
       toast.error('Cannot delete the admin user');
       return;
     }
@@ -80,6 +107,7 @@ const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
               </div>
               <div><Label>Username *</Label><Input value={newUser.username} onChange={e => setNewUser(p => ({ ...p, username: e.target.value }))} /></div>
               <div><Label>Email *</Label><Input type="email" value={newUser.email} onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} /></div>
+              <div><Label>Password *</Label><Input type="password" value={newUser.password} onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))} placeholder="Min 6 characters" /></div>
               <div><Label>Phone *</Label><Input value={newUser.phone_number} onChange={e => setNewUser(p => ({ ...p, phone_number: e.target.value }))} /></div>
               <div><Label>National ID *</Label><Input value={newUser.national_id} onChange={e => setNewUser(p => ({ ...p, national_id: e.target.value }))} /></div>
               <div>
@@ -93,7 +121,10 @@ const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={handleAddUser}>Add User</Button>
+              <Button className="w-full" onClick={handleAddUser} disabled={adding}>
+                {adding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {adding ? 'Creating User...' : 'Add User'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -123,7 +154,7 @@ const UsersTab = ({ users, onRefresh }: UsersTabProps) => {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {u.email !== 'ammyseth260@gmail.com' && (
+                  {u.email !== 'sammyseth260@gmail.com' && (
                     <div className="flex gap-1">
                       <Button size="sm" variant="outline" onClick={() => handleSuspend(u.id, u.is_active)}>
                         {u.is_active ? <Ban className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
