@@ -164,22 +164,28 @@ const Marketplace = () => {
               <p className="text-muted-foreground">No investments yet.</p>
             ) : (
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Amount Invested</TableHead>
-                    <TableHead>Expected Return (13%/mo)</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {investments.map(inv => (
-                    <TableRow key={inv.id}>
-                      <TableCell>{formatKES(Number(inv.amount_invested))}</TableCell>
-                      <TableCell>{formatKES(Number(inv.amount_invested) * 0.13)}/month</TableCell>
-                      <TableCell>{new Date(inv.date || inv.created_at).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>Amount Invested</TableHead>
+                     <TableHead>Expected Return (13%/mo)</TableHead>
+                     <TableHead>Date</TableHead>
+                     <TableHead>Contract</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {investments.map(inv => (
+                     <TableRow key={inv.id}>
+                       <TableCell>{formatKES(Number(inv.amount_invested))}</TableCell>
+                       <TableCell>{formatKES(Number(inv.amount_invested) * 0.13)}/month</TableCell>
+                       <TableCell>{new Date(inv.date || inv.created_at).toLocaleDateString()}</TableCell>
+                       <TableCell>
+                         <Button size="sm" variant="outline" onClick={() => navigate(`/contract/${inv.loan_id}`)}>
+                           View Contract
+                         </Button>
+                       </TableCell>
+                     </TableRow>
+                   ))}
+                 </TableBody>
               </Table>
             )}
           </TabsContent>
