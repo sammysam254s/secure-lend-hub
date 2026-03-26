@@ -60,12 +60,14 @@ const WalletPage = () => {
     setSimStep('Verifying Transaction...');
     await new Promise(r => setTimeout(r, 1000));
 
+    const uppercaseType = form.type.charAt(0).toUpperCase() + form.type.slice(1);
+
     const { error: txError } = await supabase.from('wallet_transactions').insert({
       user_id: profile.id,
-      transaction_type: form.type,
+      transaction_type: uppercaseType,
       amount,
       balance_after: newBalance,
-      description: `${form.type === 'deposit' ? 'Deposit' : 'Withdrawal'} of ${formatKES(amount)}`,
+      description: `${uppercaseType} of ${formatKES(amount)}`,
     });
 
     if (txError) { setError(txError.message); setSubmitting(false); return; }
@@ -150,7 +152,7 @@ const WalletPage = () => {
                   <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg border">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <Badge className={tx.transaction_type === 'deposit' ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-amber-100 text-amber-700 text-xs'}>
+                        <Badge className={tx.transaction_type.toLowerCase() === 'deposit' ? 'bg-emerald-100 text-emerald-700 text-xs' : 'bg-amber-100 text-amber-700 text-xs'}>
                           {tx.transaction_type}
                         </Badge>
                         <span className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</span>

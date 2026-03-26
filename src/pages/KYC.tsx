@@ -62,7 +62,7 @@ const KYC = () => {
       }
 
       setOcrProgress('Finalizing Verification...');
-      const { error: err } = await supabase.from('kyc_verifications').insert({
+      const { error: err } = await supabase.from('kyc_verifications').upsert({
         user_id: profile.id,
         full_name: form.full_name,
         id_number: form.id_number,
@@ -78,7 +78,7 @@ const KYC = () => {
         status: 'verified',
         verification_score: validation.score,
         verified_at: new Date().toISOString()
-      });
+      }, { onConflict: 'user_id' });
 
       if (err) { setError(err.message); setLoading(false); setOcrProgress(''); return; }
       
