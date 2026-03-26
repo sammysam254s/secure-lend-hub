@@ -26,11 +26,19 @@ const LoanApply = () => {
   useEffect(() => {
     if (!profile) return;
     const fetchData = async () => {
-      const [collateralRes, kycRes] = await Promise.all([
+      const [collateralRes, kycRes, loansRes] = await Promise.all([
         supabase.from('collateral').select('*').eq('user_id', profile.id).eq('status', 'verified'),
         supabase.from('kyc_verifications').select('status').eq('user_id', profile.id).single(),
+        // Get collateral IDs already tied to an active/pending loan
+        supabase.from('loans').select('collateral_id').eq('borrower_id', profile.id)
+          .not('status', 'in', '("paid","cancelled","rejected")'),
       ]);
-      setCollateral(collateralRes.data || []);
+
+      const usedCollateralIds = new Set((loansRes.data || []).map((l: any) => l.collateral_id));
+      // Only show collateral that is NOT already pledged to an open loan
+      const available = (collateralRes.data || []).filter((c: any) => !usedCollateralIds.has(c.id));
+
+      setCollateral(available);
       setKycVerified(kycRes.data?.status === 'verified');
       setPageLoading(false);
     };
@@ -47,6 +55,20 @@ const LoanApply = () => {
     if (Number(amount) > maxLoan) { setError(`Max loan amount is ${formatKES(maxLoan)}`); return; }
     setError('');
     setLoading(true);
+
+    // Double-check this collateral isn't already in use (race condition guard)
+    const { data: existing } = await supabase
+      .from('loans')
+      .select('id, status')
+      .eq('collateral_id', selectedCollateral)
+      .not('status', 'in', '("paid","cancelled","rejected")')
+      .maybeSingle();
+
+    if (existing) {
+      setError('This collateral is already pledged to an active loan. Please submit new collateral or wait until the existing loan is closed.');
+      setLoading(false);
+      return;
+    }
 
     const { error: err } = await supabase.from('loans').insert({
       borrower_id: profile.id,
@@ -89,9 +111,10 @@ const LoanApply = () => {
                 <Label>Select Verified Collateral</Label>
                 {collateral.length === 0 ? (
                   <div className="rounded-md border p-3 text-sm flex flex-col gap-2 text-muted-foreground bg-muted/50">
-                    <p>No verified collateral available.</p>
+                    <p>No available verified collateral.</p>
+                    <p className="text-xs">Collateral already pledged to an active loan cannot be reused until that loan is paid or cancelled.</p>
                     <Button variant="outline" size="sm" asChild className="w-fit">
-                      <Link to="/borrower/collateral-submit">Submit Collateral</Link>
+                      <Link to="/borrower/collateral-submit">Submit New Collateral</Link>
                     </Button>
                   </div>
                 ) : (
