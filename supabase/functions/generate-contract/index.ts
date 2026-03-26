@@ -260,6 +260,9 @@ Deno.serve(async (req) => {
     const idBackImg = kyc?.id_back_image_url
       ? `<img src="${kyc.id_back_image_url}" style="max-width:250px;max-height:160px;border:1px solid #ccc;border-radius:4px;" />`
       : `<p style="color:#999;font-style:italic;">Not provided</p>`;
+    const selfieImg = kyc?.selfie_image_url
+      ? `<img src="${kyc.selfie_image_url}" style="max-width:150px;max-height:150px;border:1px solid #ccc;border-radius:50%;object-fit:cover;" />`
+      : `<p style="color:#999;font-style:italic;">Not provided</p>`;
     const signatureImg = kyc?.signature_image_url
       ? `<img src="${kyc.signature_image_url}" style="max-width:200px;max-height:80px;border:1px solid #ccc;border-radius:4px;" />`
       : `<p style="color:#999;font-style:italic;">Not provided</p>`;
