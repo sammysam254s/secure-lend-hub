@@ -86,14 +86,23 @@ const LoanApply = () => {
 
               <div className="space-y-2">
                 <Label>Select Verified Collateral</Label>
-                <Select value={selectedCollateral} onValueChange={setSelectedCollateral} disabled={!kycVerified}>
-                  <SelectTrigger><SelectValue placeholder="Choose collateral" /></SelectTrigger>
-                  <SelectContent>
-                    {collateral.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.item_type} - {c.brand_model} ({formatKES(Number(c.market_value))})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {collateral.length === 0 ? (
+                  <div className="rounded-md border p-3 text-sm flex flex-col gap-2 text-muted-foreground bg-muted/50">
+                    <p>No verified collateral available.</p>
+                    <Button variant="outline" size="sm" asChild className="w-fit">
+                      <Link to="/borrower/collateral-submit">Submit Collateral</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <Select value={selectedCollateral} onValueChange={setSelectedCollateral} disabled={!kycVerified}>
+                    <SelectTrigger><SelectValue placeholder="Choose collateral" /></SelectTrigger>
+                    <SelectContent>
+                      {collateral.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.item_type} - {c.brand_model} ({formatKES(Number(c.market_value))})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {selected && <p className="text-sm text-muted-foreground">Max loan: {formatKES(maxLoan)}</p>}
               </div>
 
