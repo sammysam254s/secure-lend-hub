@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { formatKES, calculateMaxLoanAmount, calculateTotalRepayment } from '@/lib/formatters';
 
 const LoanApply = () => {
@@ -19,12 +19,22 @@ const LoanApply = () => {
   const [amount, setAmount] = useState('');
   const [duration, setDuration] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
+  const [kycVerified, setKycVerified] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
-    supabase.from('collateral').select('*').eq('user_id', profile.id).eq('status', 'verified')
-      .then(({ data }) => setCollateral(data || []));
+    const fetchData = async () => {
+      const [collateralRes, kycRes] = await Promise.all([
+        supabase.from('collateral').select('*').eq('user_id', profile.id).eq('status', 'verified'),
+        supabase.from('kyc_verifications').select('status').eq('user_id', profile.id).maybeSingle(),
+      ]);
+      setCollateral(collateralRes.data || []);
+      setKycVerified(kycRes.data?.status === 'verified');
+      setPageLoading(false);
+    };
+    fetchData();
   }, [profile]);
 
   const selected = collateral.find(c => c.id === selectedCollateral);
@@ -34,6 +44,7 @@ const LoanApply = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !selectedCollateral) return;
+    if (!kycVerified) { setError('You must complete KYC verification before applying for a loan'); return; }
     if (Number(amount) > maxLoan) { setError(`Max loan amount is ${formatKES(maxLoan)}`); return; }
     setError('');
     setLoading(true);
@@ -49,9 +60,26 @@ const LoanApply = () => {
     navigate('/borrower');
   };
 
+  if (pageLoading) return <Layout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></Layout>;
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 max-w-lg">
+        {!kycVerified && (
+          <Card className="border-destructive bg-destructive/5 mb-6">
+            <CardContent className="flex items-center gap-3 pt-6">
+              <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
+              <div>
+                <p className="font-semibold text-destructive">KYC Verification Required</p>
+                <p className="text-sm text-muted-foreground">You must complete and have your KYC verified before applying for a loan.</p>
+                <Button variant="destructive" size="sm" className="mt-2" asChild>
+                  <Link to="/kyc">Complete KYC Now</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="border-0 shadow-sm">
           <CardHeader><CardTitle>Apply for Loan</CardTitle></CardHeader>
           <CardContent>
@@ -60,7 +88,7 @@ const LoanApply = () => {
 
               <div className="space-y-2">
                 <Label>Select Verified Collateral</Label>
-                <Select value={selectedCollateral} onValueChange={setSelectedCollateral}>
+                <Select value={selectedCollateral} onValueChange={setSelectedCollateral} disabled={!kycVerified}>
                   <SelectTrigger><SelectValue placeholder="Choose collateral" /></SelectTrigger>
                   <SelectContent>
                     {collateral.map(c => (
@@ -73,12 +101,12 @@ const LoanApply = () => {
 
               <div className="space-y-2">
                 <Label>Loan Amount (KES)</Label>
-                <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Enter amount" max={maxLoan} required />
+                <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Enter amount" max={maxLoan} required disabled={!kycVerified} />
               </div>
 
               <div className="space-y-2">
                 <Label>Duration (Months)</Label>
-                <Select value={duration} onValueChange={setDuration}>
+                <Select value={duration} onValueChange={setDuration} disabled={!kycVerified}>
                   <SelectTrigger><SelectValue placeholder="Select duration" /></SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -97,9 +125,9 @@ const LoanApply = () => {
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={loading || !selectedCollateral}>
+              <Button type="submit" className="w-full" disabled={loading || !selectedCollateral || !kycVerified}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {loading ? 'Submitting...' : 'Apply for Loan'}
+                {loading ? 'Submitting...' : kycVerified ? 'Apply for Loan' : 'KYC Required'}
               </Button>
             </form>
           </CardContent>
