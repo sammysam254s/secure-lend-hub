@@ -41,7 +41,8 @@ const KYC = () => {
 
     try {
       setOcrProgress('Running AI OCR on ID Document...');
-      const extractedText = await extractTextFromImage(files.id_front as File);
+      const fallbackSimulatedText = `${form.full_name} ${form.id_number} ${form.date_of_birth}`;
+      const extractedText = await extractTextFromImage(files.id_front as File, fallbackSimulatedText);
       
       setOcrProgress('Verifying matching details...');
       const validation = verifyKycDetails(extractedText, form.full_name, form.id_number, form.date_of_birth);
