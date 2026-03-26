@@ -1,13 +1,47 @@
 /**
  * KYC Verification Logic
  *
+ * OCR: sends the ID image to the ocr-id edge function (OCR.space API) and
+ * returns the extracted text automatically — no manual typing needed.
+ *
  * Text verification: cross-checks the user-entered details (name, ID number, DOB)
- * against the text content of the ID document (typed or extracted).
+ * against the OCR-extracted text from the ID document.
  *
  * Image verification: checks that images are present and valid files (non-zero,
  * correct mime type). Face/selfie matching is intentionally lenient — aging,
  * lighting, and photo quality vary too much for strict client-side checks.
  */
+
+import { supabase } from '@/integrations/supabase/client';
+
+/**
+ * Converts a File to a base64 string (without the data URL prefix).
+ */
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Strip "data:image/jpeg;base64," prefix
+      resolve(result.split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+/**
+ * Calls the ocr-id edge function to extract text from an ID image.
+ * Returns the raw extracted text string.
+ */
+export const extractTextFromIdImage = async (idFrontFile: File): Promise<string> => {
+  const imageBase64 = await fileToBase64(idFrontFile);
+  const { data, error } = await supabase.functions.invoke('ocr-id', {
+    body: { imageBase64, mimeType: idFrontFile.type || 'image/jpeg' },
+  });
+  if (error) throw new Error(error.message || 'OCR service failed');
+  if (data?.error) throw new Error(data.error);
+  return (data?.text || '').toLowerCase();
+};
 
 export interface VerificationResult {
   isVerified: boolean;

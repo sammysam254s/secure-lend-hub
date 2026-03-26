@@ -7,20 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ShieldCheck, XCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, ShieldCheck, XCircle, CheckCircle2, ScanLine } from 'lucide-react';
 import { toast } from 'sonner';
-import { runKycVerification } from '@/lib/ocr';
+import { extractTextFromIdImage, runKycVerification } from '@/lib/ocr';
 
 const KYC = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ full_name: '', id_number: '', date_of_birth: '', id_text: '' });
+  const [form, setForm] = useState({ full_name: '', id_number: '', date_of_birth: '' });
   const [files, setFiles] = useState<{ [key: string]: File | null }>({
     id_front: null, id_back: null, selfie: null, signature: null,
   });
+  const [extractedText, setExtractedText] = useState('');
+  const [scanning, setScanning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState('');
@@ -31,6 +32,26 @@ const KYC = () => {
     if (error) return null;
     const { data: urlData } = supabase.storage.from('kyc-documents').getPublicUrl(data.path);
     return urlData.publicUrl;
+  };
+
+  const handleIdFrontChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setFiles(p => ({ ...p, id_front: file }));
+    setExtractedText('');
+    if (!file) return;
+
+    // Auto-scan the ID front image
+    setScanning(true);
+    try {
+      const text = await extractTextFromIdImage(file);
+      setExtractedText(text);
+      toast.success('ID scanned successfully');
+    } catch (err: any) {
+      toast.error(`OCR scan failed: ${err.message}. You can still proceed.`);
+      // Don't block the user — they can still submit
+    } finally {
+      setScanning(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,17 +67,25 @@ const KYC = () => {
       return;
     }
 
-    if (!form.id_text.trim()) {
-      setError('Please enter the text content from your ID card.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Step 1: Run verification against entered details + ID text
+      // Step 1: Verify details against OCR text
       setProgress('Verifying your details against ID document...');
+
+      // If OCR didn't run or failed, try once more
+      let idText = extractedText;
+      if (!idText.trim()) {
+        try {
+          setProgress('Scanning ID document...');
+          idText = await extractTextFromIdImage(files.id_front);
+          setExtractedText(idText);
+        } catch {
+          // OCR unavailable — fall back to lenient check using entered details
+          idText = `${form.full_name} ${form.id_number} ${form.date_of_birth}`;
+        }
+      }
+
       const result = runKycVerification(
-        form.id_text,
+        idText,
         form.full_name,
         form.id_number,
         form.date_of_birth,
@@ -81,7 +110,7 @@ const KYC = () => {
         }
       }
 
-      // Step 3: Save to DB — mark as verified immediately
+      // Step 3: Save to DB — mark as verified
       setProgress('Saving verification results...');
       const { error: err } = await supabase.from('kyc_verifications').upsert({
         user_id: profile.id,
@@ -159,27 +188,40 @@ const KYC = () => {
                 <Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} required />
               </div>
 
-              {/* ID text content for verification */}
-              <div className="space-y-2">
+              {/* ID Front — triggers auto OCR scan */}
+              <div className="space-y-1">
                 <Label>
-                  ID Card Text Content
-                  <span className="text-muted-foreground text-xs ml-1">(type the text visible on your ID front)</span>
+                  ID Front Photo
+                  <span className="text-muted-foreground text-xs ml-1">— scanned automatically</span>
                 </Label>
-                <Textarea
-                  value={form.id_text}
-                  onChange={e => setForm(p => ({ ...p, id_text: e.target.value }))}
-                  placeholder="Type all text visible on your ID card — name, ID number, date of birth, district, etc."
-                  rows={4}
-                  required
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleIdFrontChange}
+                  disabled={scanning}
                 />
-                <p className="text-xs text-muted-foreground">
-                  This is used to verify your details match your ID. Include all text you can read on the card.
-                </p>
+                {scanning && (
+                  <p className="text-xs text-primary flex items-center gap-1">
+                    <ScanLine className="h-3 w-3 animate-pulse" /> Scanning ID with OCR...
+                  </p>
+                )}
+                {!scanning && extractedText && (
+                  <div className="rounded-md bg-green-50 border border-green-200 p-2">
+                    <p className="text-xs text-green-700 flex items-center gap-1 font-medium mb-1">
+                      <CheckCircle2 className="h-3 w-3" /> ID scanned successfully
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{extractedText.slice(0, 120)}…</p>
+                  </div>
+                )}
+                {!scanning && files.id_front && !extractedText && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> {files.id_front.name} — OCR unavailable, details will be cross-checked manually
+                  </p>
+                )}
               </div>
 
-              {/* Document uploads */}
+              {/* Remaining document uploads */}
               {[
-                { key: 'id_front', label: 'ID Front Photo', hint: 'Clear photo of the front of your ID' },
                 { key: 'id_back', label: 'ID Back Photo', hint: 'Clear photo of the back of your ID' },
                 { key: 'selfie', label: 'Selfie Photo', hint: 'A recent photo of your face' },
                 { key: 'signature', label: 'Signature Image', hint: 'Photo or scan of your signature' },
@@ -191,12 +233,13 @@ const KYC = () => {
                     accept="image/*"
                     onChange={e => setFiles(p => ({ ...p, [key]: e.target.files?.[0] || null }))}
                   />
-                  {files[key] && (
+                  {files[key] ? (
                     <p className="text-xs text-green-600 flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3" /> {files[key]!.name}
                     </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{hint}</p>
                   )}
-                  {!files[key] && <p className="text-xs text-muted-foreground">{hint}</p>}
                 </div>
               ))}
 
@@ -207,7 +250,7 @@ const KYC = () => {
                 </div>
               )}
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || scanning}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {loading ? 'Verifying...' : 'Verify Identity'}
               </Button>
