@@ -200,7 +200,8 @@ Deno.serve(async (req) => {
 
     const finalContractId = existingContract?.id || contractId;
 
-    const verificationUrl = `${supabaseUrl}/functions/v1/verify-contract?id=${finalContractId}`;
+    const appUrl = Deno.env.get("APP_URL") || "https://securelendkenya.netlify.app";
+    const verificationUrl = `${appUrl}/contracts/verify?id=${finalContractId}`;
     const qrSvg = generateQRCodeSVG(verificationUrl);
     const leafSvg = generateLeafSVG();
 

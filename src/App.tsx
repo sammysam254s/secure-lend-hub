@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import WalletPage from "./pages/Wallet";
 import ContractView from "./pages/ContractView";
 import ContractsList from "./pages/ContractsList";
+import ContractVerify from "./pages/ContractVerify";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
             <Route path="/contracts" element={<ProtectedRoute><ContractsList /></ProtectedRoute>} />
+            <Route path="/contracts/verify" element={<ContractVerify />} />
             <Route path="/contract/:loanId" element={<ProtectedRoute><ContractView /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
