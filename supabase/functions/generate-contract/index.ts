@@ -309,7 +309,7 @@ Deno.serve(async (req) => {
       <tr><td style="padding:3px 0;"><strong>Loan Duration:</strong></td><td>${duration} month(s)</td></tr>
       <tr><td style="padding:3px 0;"><strong>Monthly Interest:</strong></td><td>${formatKES(monthlyInterest)}</td></tr>
       <tr><td style="padding:3px 0;"><strong>Total Interest:</strong></td><td>${formatKES(totalInterest)}</td></tr>
-      <tr><td style="padding:3px 0;"><strong>Platform Fee (1%):</strong></td><td>${formatKES(platformFee)}</td></tr>
+      <tr><td style="padding:3px 0;"><strong>Platform Fee (2%):</strong></td><td>${formatKES(platformFee)}</td></tr>
       <tr><td style="padding:3px 0;"><strong>Insurance Fee (1%):</strong></td><td>${formatKES(insuranceFee)}</td></tr>
       <tr style="border-top:2px solid #2e7d32;"><td style="padding:8px 0;"><strong>Total Repayment:</strong></td><td style="font-weight:bold;font-size:14px;color:#1b5e20;">${formatKES(totalRepayment)}</td></tr>
       <tr><td style="padding:3px 0;"><strong>Due Date:</strong></td><td style="color:#d32f2f;font-weight:bold;">${dueDateStr}</td></tr>
