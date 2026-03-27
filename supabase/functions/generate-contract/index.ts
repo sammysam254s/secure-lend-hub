@@ -47,7 +47,7 @@ const CONTRACT_CLAUSES = [
   },
   {
     title: "Platform and Insurance Fees",
-    text: "A platform administration fee of 1% of the principal and an insurance fee of 1% of the principal shall be charged and deducted at the point of disbursement or added to the total repayment amount, in accordance with the Consumer Protection Act, 2012 (No. 46 of 2012)."
+    text: "A platform administration fee of 2% of the principal shall be charged to both borrower and lender(s). An insurance fee of 1% of the principal shall also be charged. These fees are deducted at disbursement (borrower) and from lender returns upon repayment, in accordance with the Consumer Protection Act, 2012 (No. 46 of 2012)."
   },
   {
     title: "Repayment Terms",
