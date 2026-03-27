@@ -350,24 +350,33 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-    // Store contract in database
-    await supabase.from("loan_contracts").insert({
-      id: contractId,
-      loan_id,
-      borrower_id: loan.borrower_id,
-      lender_ids: lenderIds,
-      principal_amount: principal,
-      total_repayment: totalRepayment,
-      due_date: dueDate.toISOString(),
-      pdf_url: "", // Will update after storage
-      status: "active",
-    });
+    // Check if contract already exists for this loan
+    const { data: existingContract } = await supabase
+      .from("loan_contracts")
+      .select("id")
+      .eq("loan_id", loan_id)
+      .maybeSingle();
 
-    // Store verification record
-    await supabase.from("contract_verifications").insert({
-      contract_id: contractId,
-      verification_method: "qr_code",
-    });
+    const finalContractId = existingContract?.id || contractId;
+
+    if (!existingContract) {
+      // Store contract in database
+      await supabase.from("loan_contracts").insert({
+        id: contractId,
+        loan_id,
+        borrower_id: loan.borrower_id,
+        lender_ids: lenderIds,
+        principal_amount: principal,
+        total_repayment: totalRepayment,
+        due_date: dueDate.toISOString(),
+        pdf_url: "",
+        status: "active",
+      });
+    }
+
+    // Rebuild verification URL with final contract ID
+    const finalVerificationUrl = `${supabaseUrl}/functions/v1/verify-contract?id=${finalContractId}`;
+    const finalQrSvg = generateQRCodeSVG(finalVerificationUrl);
 
     // Update loan status to active
     await supabase
