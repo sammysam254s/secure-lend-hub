@@ -202,6 +202,7 @@ Deno.serve(async (req) => {
 
     const verificationUrl = `${supabaseUrl}/functions/v1/verify-contract?id=${finalContractId}`;
     const qrSvg = generateQRCodeSVG(verificationUrl);
+    const leafSvg = generateLeafSVG();
 
     const formatKES = (n: number) =>
       `KES ${n.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
