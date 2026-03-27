@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
     const duration = Number(loan.duration_months);
     const monthlyInterest = principal * (rate / 100);
     const totalInterest = monthlyInterest * duration;
-    const platformFee = principal * 0.01;
+    const platformFee = principal * 0.02;
     const insuranceFee = principal * 0.01;
     const totalRepayment = principal + totalInterest + platformFee + insuranceFee;
 
