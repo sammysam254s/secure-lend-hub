@@ -200,7 +200,8 @@ Deno.serve(async (req) => {
 
     const finalContractId = existingContract?.id || contractId;
 
-    const appUrl = Deno.env.get("APP_URL") || "https://securelendkenya.netlify.app";
+    const appUrl = (Deno.env.get("APP_URL") || "").replace(/\/$/, "");
+    if (!appUrl) throw new Error("APP_URL environment variable is not set");
     const verificationUrl = `${appUrl}/contracts/verify?id=${finalContractId}`;
     const qrSvg = generateQRCodeSVG(verificationUrl);
     const leafSvg = generateLeafSVG();
