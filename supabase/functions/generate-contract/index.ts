@@ -47,7 +47,7 @@ const CONTRACT_CLAUSES = [
   },
   {
     title: "Platform and Insurance Fees",
-    text: "A platform administration fee of 1% of the principal and an insurance fee of 1% of the principal shall be charged and deducted at the point of disbursement or added to the total repayment amount, in accordance with the Consumer Protection Act, 2012 (No. 46 of 2012)."
+    text: "A platform administration fee of 2% of the principal shall be charged to both borrower and lender(s). An insurance fee of 1% of the principal shall also be charged. These fees are deducted at disbursement (borrower) and from lender returns upon repayment, in accordance with the Consumer Protection Act, 2012 (No. 46 of 2012)."
   },
   {
     title: "Repayment Terms",
@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
     const duration = Number(loan.duration_months);
     const monthlyInterest = principal * (rate / 100);
     const totalInterest = monthlyInterest * duration;
-    const platformFee = principal * 0.01;
+    const platformFee = principal * 0.02;
     const insuranceFee = principal * 0.01;
     const totalRepayment = principal + totalInterest + platformFee + insuranceFee;
 
@@ -309,7 +309,7 @@ Deno.serve(async (req) => {
       <tr><td style="padding:3px 0;"><strong>Loan Duration:</strong></td><td>${duration} month(s)</td></tr>
       <tr><td style="padding:3px 0;"><strong>Monthly Interest:</strong></td><td>${formatKES(monthlyInterest)}</td></tr>
       <tr><td style="padding:3px 0;"><strong>Total Interest:</strong></td><td>${formatKES(totalInterest)}</td></tr>
-      <tr><td style="padding:3px 0;"><strong>Platform Fee (1%):</strong></td><td>${formatKES(platformFee)}</td></tr>
+      <tr><td style="padding:3px 0;"><strong>Platform Fee (2%):</strong></td><td>${formatKES(platformFee)}</td></tr>
       <tr><td style="padding:3px 0;"><strong>Insurance Fee (1%):</strong></td><td>${formatKES(insuranceFee)}</td></tr>
       <tr style="border-top:2px solid #2e7d32;"><td style="padding:8px 0;"><strong>Total Repayment:</strong></td><td style="font-weight:bold;font-size:14px;color:#1b5e20;">${formatKES(totalRepayment)}</td></tr>
       <tr><td style="padding:3px 0;"><strong>Due Date:</strong></td><td style="color:#d32f2f;font-weight:bold;">${dueDateStr}</td></tr>

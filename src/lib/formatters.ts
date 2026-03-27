@@ -8,7 +8,7 @@ export const calculateMaxLoanAmount = (marketValue: number): number => {
 
 export const calculateTotalRepayment = (principal: number, durationMonths: number, rate: number = 13): number => {
   const totalInterest = principal * (rate / 100) * durationMonths;
-  const platformFee = principal * 0.01;
+  const platformFee = principal * 0.02;
   const insuranceFee = principal * 0.01;
   return principal + totalInterest + platformFee + insuranceFee;
 };
