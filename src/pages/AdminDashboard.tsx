@@ -46,7 +46,11 @@ const AdminDashboard = () => {
   if (loading) return <Layout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></Layout>;
 
   const totalInvested = loans.reduce((s, l) => s + Number(l.funded_amount || 0), 0);
-  const platformFees = loans.filter(l => ['active', 'paid'].includes(l.status)).reduce((s, l) => s + Number(l.principal_amount) * 0.01, 0);
+  const activeLoans = loans.filter(l => ['active', 'paid'].includes(l.status));
+  const platformFees = activeLoans.reduce((s, l) => s + Number(l.principal_amount) * 0.02, 0);
+  const lenderPlatformFees = activeLoans.filter(l => l.status === 'paid').reduce((s, l) => s + Number(l.principal_amount) * 0.02, 0);
+  const totalPlatformFees = platformFees + lenderPlatformFees;
+  const insurancePool = activeLoans.reduce((s, l) => s + Number(l.principal_amount) * 0.01, 0);
 
   return (
     <Layout>
