@@ -57,7 +57,7 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Admin Dashboard</h1>
 
-        <AdminStats usersCount={users.length} loansCount={loans.length} totalInvested={totalInvested} platformFees={platformFees} />
+        <AdminStats usersCount={users.length} loansCount={loans.length} totalInvested={totalInvested} platformFees={totalPlatformFees} insurancePool={insurancePool} />
 
         <Tabs defaultValue="users">
           <TabsList className="w-full flex overflow-x-auto">
