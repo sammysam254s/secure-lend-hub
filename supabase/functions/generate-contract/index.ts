@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.0";
 import { encode as base64Encode } from "https://deno.land/std@0.208.0/encoding/base64.ts";
+import qrcode from "https://esm.sh/qrcode-generator@1.4.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,46 +8,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Simple QR code SVG generator using a basic encoding
 function generateQRCodeSVG(data: string, size: number = 150): string {
-  // Use a simple hash-based visual pattern as a stylized QR representation
-  // For production, integrate a proper QR library
-  const hash = Array.from(data).reduce((acc, char) => {
-    return ((acc << 5) - acc + char.charCodeAt(0)) | 0;
-  }, 0);
+  const qr = qrcode(0, 'M');
+  qr.addData(data);
+  qr.make();
   
-  const modules = 21;
-  const cellSize = size / modules;
+  const moduleCount = qr.getModuleCount();
+  const cellSize = size / moduleCount;
   let rects = "";
   
-  // Generate a deterministic pattern from the data
-  let seed = Math.abs(hash);
-  const grid: boolean[][] = [];
-  
-  for (let r = 0; r < modules; r++) {
-    grid[r] = [];
-    for (let c = 0; c < modules; c++) {
-      // Finder patterns (top-left, top-right, bottom-left)
-      const isFinderTL = r < 7 && c < 7;
-      const isFinderTR = r < 7 && c >= modules - 7;
-      const isFinderBL = r >= modules - 7 && c < 7;
-      
-      if (isFinderTL || isFinderTR || isFinderBL) {
-        const lr = isFinderTL ? r : isFinderTR ? r : r - (modules - 7);
-        const lc = isFinderTL ? c : isFinderTR ? c - (modules - 7) : c;
-        const isBorder = lr === 0 || lr === 6 || lc === 0 || lc === 6;
-        const isInner = lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4;
-        grid[r][c] = isBorder || isInner;
-      } else {
-        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        grid[r][c] = (seed % 3) === 0;
-      }
-    }
-  }
-  
-  for (let r = 0; r < modules; r++) {
-    for (let c = 0; c < modules; c++) {
-      if (grid[r][c]) {
+  for (let r = 0; r < moduleCount; r++) {
+    for (let c = 0; c < moduleCount; c++) {
+      if (qr.isDark(r, c)) {
         rects += `<rect x="${c * cellSize}" y="${r * cellSize}" width="${cellSize}" height="${cellSize}" fill="#000"/>`;
       }
     }
@@ -218,7 +191,16 @@ Deno.serve(async (req) => {
     });
 
     const contractId = crypto.randomUUID();
-    const verificationUrl = `${supabaseUrl}/functions/v1/verify-contract?id=${contractId}`;
+    // Check if contract already exists for this loan
+    const { data: existingContract } = await supabase
+      .from("loan_contracts")
+      .select("id")
+      .eq("loan_id", loan_id)
+      .maybeSingle();
+
+    const finalContractId = existingContract?.id || contractId;
+
+    const verificationUrl = `${supabaseUrl}/functions/v1/verify-contract?id=${finalContractId}`;
     const qrSvg = generateQRCodeSVG(verificationUrl);
     const leafSvg = generateLeafSVG();
 
@@ -278,7 +260,7 @@ Deno.serve(async (req) => {
     <h1 style="color:#2e7d32;margin:8px 0 4px;font-size:24px;">P2P Secure-Lend Kenya</h1>
     <p style="color:#666;margin:0;font-size:12px;">Peer-to-Peer Secured Lending Platform</p>
     <h2 style="color:#1b5e20;margin:16px 0 0;font-size:18px;">LOAN CONTRACT AGREEMENT</h2>
-    <p style="color:#666;margin:4px 0 0;font-size:11px;">Contract ID: ${contractId}</p>
+    <p style="color:#666;margin:4px 0 0;font-size:11px;">Contract ID: ${finalContractId}</p>
     <p style="color:#666;margin:2px 0 0;font-size:11px;">Date: ${contractDate}</p>
   </div>
 
@@ -362,8 +344,8 @@ Deno.serve(async (req) => {
   <div style="text-align:center;border-top:2px solid #2e7d32;padding-top:20px;margin-top:30px;">
     <p style="font-size:11px;color:#666;margin:0 0 8px;">Scan the QR code below to verify the authenticity of this contract</p>
     <div style="display:inline-block;padding:8px;border:2px solid #2e7d32;border-radius:8px;">${qrSvg}</div>
-    <p style="font-size:10px;color:#999;margin:8px 0 0;">Contract ID: ${contractId}</p>
-    <p style="font-size:10px;color:#999;margin:4px 0 0;">Verification URL: ${verificationUrl}</p>
+     <p style="font-size:10px;color:#999;margin:8px 0 0;">Contract ID: ${finalContractId}</p>
+     <p style="font-size:10px;color:#999;margin:4px 0 0;">Verification URL: ${verificationUrl}</p>
   </div>
 
   <!-- Footer -->
@@ -377,24 +359,20 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-    // Store contract in database
-    await supabase.from("loan_contracts").insert({
-      id: contractId,
-      loan_id,
-      borrower_id: loan.borrower_id,
-      lender_ids: lenderIds,
-      principal_amount: principal,
-      total_repayment: totalRepayment,
-      due_date: dueDate.toISOString(),
-      pdf_url: "", // Will update after storage
-      status: "active",
-    });
-
-    // Store verification record
-    await supabase.from("contract_verifications").insert({
-      contract_id: contractId,
-      verification_method: "qr_code",
-    });
+    if (!existingContract) {
+      // Store contract in database
+      await supabase.from("loan_contracts").insert({
+        id: finalContractId,
+        loan_id,
+        borrower_id: loan.borrower_id,
+        lender_ids: lenderIds,
+        principal_amount: principal,
+        total_repayment: totalRepayment,
+        due_date: dueDate.toISOString(),
+        pdf_url: "",
+        status: "active",
+      });
+    }
 
     // Update loan status to active
     await supabase
@@ -405,7 +383,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        contract_id: contractId,
+        contract_id: finalContractId,
         html,
         verification_url: verificationUrl,
       }),
@@ -413,9 +391,10 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

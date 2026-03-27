@@ -135,9 +135,9 @@ const BorrowerDashboard = () => {
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <s.icon className="h-5 w-5 text-primary" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">{s.label}</p>
-                  <p className="text-lg font-bold truncate">{s.value}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <p className="text-sm sm:text-lg font-bold break-all">{s.value}</p>
                 </div>
               </CardContent>
             </Card>
