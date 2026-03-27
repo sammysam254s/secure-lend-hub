@@ -191,9 +191,17 @@ Deno.serve(async (req) => {
     });
 
     const contractId = crypto.randomUUID();
-    const verificationUrl = `${supabaseUrl}/functions/v1/verify-contract?id=${contractId}`;
+    // Check if contract already exists for this loan
+    const { data: existingContract } = await supabase
+      .from("loan_contracts")
+      .select("id")
+      .eq("loan_id", loan_id)
+      .maybeSingle();
+
+    const finalContractId = existingContract?.id || contractId;
+
+    const verificationUrl = `${supabaseUrl}/functions/v1/verify-contract?id=${finalContractId}`;
     const qrSvg = generateQRCodeSVG(verificationUrl);
-    const leafSvg = generateLeafSVG();
 
     const formatKES = (n: number) =>
       `KES ${n.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
