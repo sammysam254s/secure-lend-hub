@@ -344,8 +344,8 @@ Deno.serve(async (req) => {
   <div style="text-align:center;border-top:2px solid #2e7d32;padding-top:20px;margin-top:30px;">
     <p style="font-size:11px;color:#666;margin:0 0 8px;">Scan the QR code below to verify the authenticity of this contract</p>
     <div style="display:inline-block;padding:8px;border:2px solid #2e7d32;border-radius:8px;">${qrSvg}</div>
-    <p style="font-size:10px;color:#999;margin:8px 0 0;">Contract ID: ${contractId}</p>
-    <p style="font-size:10px;color:#999;margin:4px 0 0;">Verification URL: ${verificationUrl}</p>
+     <p style="font-size:10px;color:#999;margin:8px 0 0;">Contract ID: ${finalContractId}</p>
+     <p style="font-size:10px;color:#999;margin:4px 0 0;">Verification URL: ${verificationUrl}</p>
   </div>
 
   <!-- Footer -->
@@ -359,19 +359,10 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-    // Check if contract already exists for this loan
-    const { data: existingContract } = await supabase
-      .from("loan_contracts")
-      .select("id")
-      .eq("loan_id", loan_id)
-      .maybeSingle();
-
-    const finalContractId = existingContract?.id || contractId;
-
     if (!existingContract) {
       // Store contract in database
       await supabase.from("loan_contracts").insert({
-        id: contractId,
+        id: finalContractId,
         loan_id,
         borrower_id: loan.borrower_id,
         lender_ids: lenderIds,
@@ -383,10 +374,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Rebuild verification URL with final contract ID
-    const finalVerificationUrl = `${supabaseUrl}/functions/v1/verify-contract?id=${finalContractId}`;
-    const finalQrSvg = generateQRCodeSVG(finalVerificationUrl);
-
     // Update loan status to active
     await supabase
       .from("loans")
@@ -396,7 +383,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        contract_id: contractId,
+        contract_id: finalContractId,
         html,
         verification_url: verificationUrl,
       }),
