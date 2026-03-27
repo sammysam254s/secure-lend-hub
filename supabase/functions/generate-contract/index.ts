@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.0";
 import { encode as base64Encode } from "https://deno.land/std@0.208.0/encoding/base64.ts";
+import qrcode from "https://esm.sh/qrcode-generator@1.4.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,46 +8,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Simple QR code SVG generator using a basic encoding
 function generateQRCodeSVG(data: string, size: number = 150): string {
-  // Use a simple hash-based visual pattern as a stylized QR representation
-  // For production, integrate a proper QR library
-  const hash = Array.from(data).reduce((acc, char) => {
-    return ((acc << 5) - acc + char.charCodeAt(0)) | 0;
-  }, 0);
+  const qr = qrcode(0, 'M');
+  qr.addData(data);
+  qr.make();
   
-  const modules = 21;
-  const cellSize = size / modules;
+  const moduleCount = qr.getModuleCount();
+  const cellSize = size / moduleCount;
   let rects = "";
   
-  // Generate a deterministic pattern from the data
-  let seed = Math.abs(hash);
-  const grid: boolean[][] = [];
-  
-  for (let r = 0; r < modules; r++) {
-    grid[r] = [];
-    for (let c = 0; c < modules; c++) {
-      // Finder patterns (top-left, top-right, bottom-left)
-      const isFinderTL = r < 7 && c < 7;
-      const isFinderTR = r < 7 && c >= modules - 7;
-      const isFinderBL = r >= modules - 7 && c < 7;
-      
-      if (isFinderTL || isFinderTR || isFinderBL) {
-        const lr = isFinderTL ? r : isFinderTR ? r : r - (modules - 7);
-        const lc = isFinderTL ? c : isFinderTR ? c - (modules - 7) : c;
-        const isBorder = lr === 0 || lr === 6 || lc === 0 || lc === 6;
-        const isInner = lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4;
-        grid[r][c] = isBorder || isInner;
-      } else {
-        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        grid[r][c] = (seed % 3) === 0;
-      }
-    }
-  }
-  
-  for (let r = 0; r < modules; r++) {
-    for (let c = 0; c < modules; c++) {
-      if (grid[r][c]) {
+  for (let r = 0; r < moduleCount; r++) {
+    for (let c = 0; c < moduleCount; c++) {
+      if (qr.isDark(r, c)) {
         rects += `<rect x="${c * cellSize}" y="${r * cellSize}" width="${cellSize}" height="${cellSize}" fill="#000"/>`;
       }
     }
