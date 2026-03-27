@@ -260,7 +260,7 @@ Deno.serve(async (req) => {
     <h1 style="color:#2e7d32;margin:8px 0 4px;font-size:24px;">P2P Secure-Lend Kenya</h1>
     <p style="color:#666;margin:0;font-size:12px;">Peer-to-Peer Secured Lending Platform</p>
     <h2 style="color:#1b5e20;margin:16px 0 0;font-size:18px;">LOAN CONTRACT AGREEMENT</h2>
-    <p style="color:#666;margin:4px 0 0;font-size:11px;">Contract ID: ${contractId}</p>
+    <p style="color:#666;margin:4px 0 0;font-size:11px;">Contract ID: ${finalContractId}</p>
     <p style="color:#666;margin:2px 0 0;font-size:11px;">Date: ${contractDate}</p>
   </div>
 
