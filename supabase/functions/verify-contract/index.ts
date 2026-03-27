@@ -60,6 +60,9 @@ Deno.serve(async (req) => {
   const loan = loanRes.data;
   const collateral = loan?.collateral as any;
 
+  const formatKES = (n: number) =>
+    `KES ${n.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
+
   // Fetch lenders
   const lenderIds = Array.isArray(contract.lender_ids) ? contract.lender_ids : [];
   let lenderHtml = "";
@@ -79,9 +82,6 @@ Deno.serve(async (req) => {
       </div>`;
     }).join("");
   }
-
-  const formatKES = (n: number) =>
-    `KES ${n.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
 
   const verifiedDate = new Date().toLocaleString("en-KE", {
     dateStyle: "full",
