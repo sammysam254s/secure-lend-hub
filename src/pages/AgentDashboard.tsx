@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { formatKES, calculateMaxLoanAmount, getStatusColor } from '@/lib/formatt
 import { toast } from 'sonner';
 
 const AgentDashboard = () => {
+  const { profile } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -57,6 +59,17 @@ const AgentDashboard = () => {
       await supabase.from('loans').update({ status: 'listed' })
         .eq('id', loan.id)
         .eq('status', 'pending_collateral');
+
+      // Create 0.5% commission for the agent (pending admin payout)
+      if (profile?.id) {
+        const commissionAmount = finalValue * 0.005;
+        await supabase.from('commissions').insert({
+          agent_id: profile.id,
+          loan_id: loan.id,
+          amount: commissionAmount,
+          status: 'pending',
+        });
+      }
     }
 
     toast.success('Collateral verified and loan listed for funding');

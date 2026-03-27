@@ -39,6 +39,13 @@ const Navbar = () => {
           {user && profile ? (
             <>
               <Link to={getDashboardLink()} className="hover:underline">Dashboard</Link>
+              {profile.role === 'admin' && (
+                <>
+                  <Link to="/borrower" className="hover:underline text-sm opacity-90">Borrower</Link>
+                  <Link to="/marketplace" className="hover:underline text-sm opacity-90">Lender</Link>
+                  <Link to="/agent" className="hover:underline text-sm opacity-90">Agent</Link>
+                </>
+              )}
               <Link to="/wallet" className="hover:underline">Wallet</Link>
               <Link to="/contracts" className="hover:underline">Contracts</Link>
               <span className="text-sm opacity-80">
@@ -72,6 +79,13 @@ const Navbar = () => {
           {user && profile ? (
             <>
               <Link to={getDashboardLink()} className="block py-1 hover:underline" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+              {profile.role === 'admin' && (
+                <>
+                  <Link to="/borrower" className="block py-1 hover:underline text-sm opacity-90" onClick={() => setMobileOpen(false)}>Borrower View</Link>
+                  <Link to="/marketplace" className="block py-1 hover:underline text-sm opacity-90" onClick={() => setMobileOpen(false)}>Lender View</Link>
+                  <Link to="/agent" className="block py-1 hover:underline text-sm opacity-90" onClick={() => setMobileOpen(false)}>Agent View</Link>
+                </>
+              )}
               <Link to="/wallet" className="block py-1 hover:underline" onClick={() => setMobileOpen(false)}>Wallet</Link>
               <Link to="/contracts" className="block py-1 hover:underline" onClick={() => setMobileOpen(false)}>Contracts</Link>
               <div className="text-sm opacity-80 py-1">{profile.username} ({profile.role})</div>
