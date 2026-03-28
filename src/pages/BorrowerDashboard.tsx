@@ -74,9 +74,19 @@ const BorrowerDashboard = () => {
       .eq('loan_id', loan.id);
 
     const principal = Number(loan.principal_amount);
+    const interestRate = Number(loan.interest_rate || 13) / 100;
+    const durationMonths = Number(loan.duration_months);
+    const totalInterest = principal * interestRate * durationMonths;
+    
     for (const inv of investments || []) {
       const share = Number(inv.amount_invested) / principal;
-      const lenderReturn = totalRepayment * share;
+      const lenderPrincipalShare = Number(inv.amount_invested);
+      const lenderInterestShare = totalInterest * share;
+      
+      // Deduct lender platform fee (2% of interest earned) and insurance fee (1% of principal share)
+      const lenderPlatformFee = lenderInterestShare * 0.02;
+      const lenderInsuranceFee = lenderPrincipalShare * 0.01;
+      const lenderReturn = lenderPrincipalShare + lenderInterestShare - lenderPlatformFee - lenderInsuranceFee;
 
       const { data: lender } = await supabase.from('users').select('wallet_balance').eq('id', inv.lender_id).single();
       const newLenderBalance = Number(lender?.wallet_balance || 0) + lenderReturn;
@@ -87,7 +97,7 @@ const BorrowerDashboard = () => {
         transaction_type: 'deposit',
         amount: lenderReturn,
         balance_after: newLenderBalance,
-        description: `Loan repayment received for loan ${loan.id.slice(0, 8)}`,
+        description: `Loan repayment received for loan ${loan.id.slice(0, 8)} (after 2% platform fee & 1% insurance)`,
       });
     }
 
