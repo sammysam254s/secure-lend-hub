@@ -56,7 +56,13 @@ const AgentDashboard = () => {
     // List the associated loan
     const loan = Array.isArray(collateral.loans) ? collateral.loans[0] : collateral.loans;
     if (loan) {
-      await supabase.from('loans').update({ status: 'listed' })
+      const maxLoanFromAgent = calculateMaxLoanAmount(finalValue);
+      const cappedPrincipal = Math.min(Number(loan.principal_amount), maxLoanFromAgent);
+      
+      await supabase.from('loans').update({ 
+        status: 'listed',
+        principal_amount: cappedPrincipal,
+      })
         .eq('id', loan.id)
         .eq('status', 'pending_collateral');
 
