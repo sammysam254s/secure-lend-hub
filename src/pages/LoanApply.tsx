@@ -195,7 +195,7 @@ const LoanApply = () => {
                   <div className="rounded-md bg-muted p-4 space-y-1 text-sm">
                     <p><strong>Total Repayment:</strong> {formatKES(totalRepayment)}</p>
                     <p>Interest: 13% × {duration} months = {formatKES(Number(amount) * 0.13 * Number(duration))}</p>
-                    <p>Platform fee (1%): {formatKES(Number(amount) * 0.01)}</p>
+                    <p>Platform fee (2%): {formatKES(Number(amount) * 0.02)}</p>
                     <p>Insurance fee (1%): {formatKES(Number(amount) * 0.01)}</p>
                   </div>
                 )}
