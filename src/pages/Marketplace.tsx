@@ -163,7 +163,7 @@ const Marketplace = () => {
                         {collateralData && (
                           <div className="text-sm space-y-1">
                             <p><strong>Collateral:</strong> {collateralData.item_type} - {collateralData.brand_model}</p>
-                            <p><strong>Value:</strong> {formatKES(Number(collateralData.market_value))}</p>
+                            <p><strong>Value:</strong> {formatKES(Number(collateralData.agent_verified_value || collateralData.market_value))}</p>
                             {collateralData.status !== 'verified' && (
                               <p className="text-xs text-amber-600">⏳ Collateral pending agent verification</p>
                             )}
