@@ -64,7 +64,7 @@ export default function ContractVerify() {
       setKyc(kycRes.data);
       setLoan(loanRes.data);
 
-      const lenderIds = Array.isArray(c.lender_ids) ? c.lender_ids : [];
+      const lenderIds = (Array.isArray(c.lender_ids) ? c.lender_ids : []).map(String);
       if (lenderIds.length > 0) {
         const [lendersRes, invRes] = await Promise.all([
           supabase.from("users").select("id, username, email").in("id", lenderIds),
