@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Leaf, Loader2 } from 'lucide-react';
 
 const Register = () => {
@@ -14,6 +15,7 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (field: string, value: string) => {
@@ -114,9 +116,18 @@ const Register = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-start space-x-2">
+              <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(checked) => setAgreedToTerms(checked === true)} className="mt-0.5" />
+              <Label htmlFor="terms" className="text-sm font-normal leading-snug">
+                I have read and agree to the{' '}
+                <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms & Conditions</Link>
+                {' '}and{' '}
+                <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>
+              </Label>
+            </div>
           </CardContent>
           <CardFooter className="flex-col gap-3">
-            <Button type="submit" className="w-full" disabled={loading || !form.role}>
+            <Button type="submit" className="w-full" disabled={loading || !form.role || !agreedToTerms}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {loading ? 'Creating account...' : 'Create Account'}
             </Button>
