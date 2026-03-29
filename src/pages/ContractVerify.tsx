@@ -119,25 +119,61 @@ export default function ContractVerify() {
   const collateral = loan?.collateral as any;
   const borrowerName = kyc?.full_name || `${borrower?.first_name || ""} ${borrower?.last_name || ""}`.trim() || "N/A";
   const isActive = contract!.status === "active";
+  const isCompleted = contract!.status === "completed" || contract!.status === "paid";
+  const sealColor = isCompleted ? "text-red-700 border-red-700" : "text-green-700 border-green-700";
+  const sealBg = isCompleted ? "bg-red-50" : "bg-green-50";
 
   return (
     <div className="min-h-screen bg-green-50 py-6 px-4">
       <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
 
         {/* Header */}
-        <div className="bg-gradient-to-br from-green-800 to-green-500 text-white text-center py-8 px-6">
-          <div className="text-5xl mb-2">✔</div>
-          <h1 className="text-xl font-bold mb-1">Contract Verified</h1>
-          <p className="text-green-100 text-sm">This is an authentic P2P Secure-Lend Kenya contract</p>
-          <span className="inline-block mt-3 bg-white/20 text-white text-xs px-4 py-1 rounded-full">🔒 Digitally Verified</span>
+        <div className={`${isCompleted ? 'bg-gradient-to-br from-red-800 to-red-500' : 'bg-gradient-to-br from-green-800 to-green-500'} text-white text-center py-8 px-6`}>
+          <div className="text-5xl mb-2">{isCompleted ? '📋' : '✔'}</div>
+          <h1 className="text-xl font-bold mb-1">{isCompleted ? 'Contract Expired' : 'Contract Verified'}</h1>
+          <p className={`${isCompleted ? 'text-red-100' : 'text-green-100'} text-sm`}>
+            {isCompleted ? 'This contract has been fulfilled — payment honoured by borrower' : 'This is an authentic P2P Secure-Lend Kenya contract'}
+          </p>
+          <span className="inline-block mt-3 bg-white/20 text-white text-xs px-4 py-1 rounded-full">
+            {isCompleted ? '✅ Payment Complete' : '🔒 Digitally Verified'}
+          </span>
+        </div>
+
+        {/* Official Stamp/Seal */}
+        <div className="flex justify-center py-6">
+          <div className={`relative w-52 h-52 flex items-center justify-center`}>
+            <div className={`absolute w-48 h-48 rounded-full border-4 ${sealColor}`}></div>
+            <div className={`absolute w-44 h-44 rounded-full border-2 ${sealColor}`}></div>
+            <div className={`text-center z-10 px-4 ${sealColor}`}>
+              <p className="text-[8px] font-bold tracking-[3px] uppercase">P2P Secure-Lend</p>
+              <p className="text-2xl my-1">🌿</p>
+              {isCompleted ? (
+                <>
+                  <p className="text-sm font-bold tracking-wider text-red-700">EXPIRED</p>
+                  <p className="text-[7px] font-bold text-red-600 mt-0.5">PAYMENT HONOURED</p>
+                  <p className="text-[7px] font-bold text-red-600">BY BORROWER</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-bold tracking-wider text-green-700">ACTIVE</p>
+                  <p className="text-[7px] font-bold text-green-600 mt-0.5">DIGITALLY VERIFIED</p>
+                  <p className="text-[7px] font-bold text-green-600">& SEALED</p>
+                </>
+              )}
+              <div className={`border-t ${sealColor} mx-2 my-1.5`}></div>
+              <p className="text-[7px] text-gray-500">{formatDate(contract!.created_at)}</p>
+              <p className="text-[7px] text-gray-500">Due: {formatDate(contract!.due_date)}</p>
+              <p className="text-[6px] tracking-[2px] uppercase mt-1">Official Digital Seal</p>
+            </div>
+          </div>
         </div>
 
         {/* Contract Details */}
         <Section title="Contract Details">
           <Row label="Contract ID"><span className="text-xs break-all">{contract!.id}</span></Row>
           <Row label="Status">
-            <span className={`font-bold ${isActive ? "text-green-700" : "text-red-600"}`}>
-              {(contract!.status || "active").toUpperCase()}
+            <span className={`font-bold ${isCompleted ? "text-red-600" : isActive ? "text-green-700" : "text-yellow-600"}`}>
+              {isCompleted ? "EXPIRED — PAYMENT HONOURED" : (contract!.status || "active").toUpperCase()}
             </span>
           </Row>
           <Row label="Created">{formatDate(contract!.created_at)}</Row>
@@ -159,9 +195,9 @@ export default function ContractVerify() {
         {/* Financial Summary */}
         <Section title="Financial Summary">
           <Row label="Principal Amount">{formatKES(Number(contract!.principal_amount))}</Row>
-          <div className="flex justify-between items-center bg-green-50 rounded-lg px-4 py-3 mt-1">
+          <div className={`flex justify-between items-center ${sealBg} rounded-lg px-4 py-3 mt-1`}>
             <span className="font-bold text-sm">Total Repayment</span>
-            <span className="font-bold text-green-900 text-base">{formatKES(Number(contract!.total_repayment))}</span>
+            <span className={`font-bold text-base ${isCompleted ? 'text-red-900' : 'text-green-900'}`}>{formatKES(Number(contract!.total_repayment))}</span>
           </div>
         </Section>
 
