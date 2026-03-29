@@ -18,6 +18,8 @@ import WalletPage from "./pages/Wallet";
 import ContractView from "./pages/ContractView";
 import ContractsList from "./pages/ContractsList";
 import ContractVerify from "./pages/ContractVerify";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
