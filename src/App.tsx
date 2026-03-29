@@ -46,6 +46,8 @@ const App = () => (
             <Route path="/contracts" element={<ProtectedRoute><ContractsList /></ProtectedRoute>} />
             <Route path="/contracts/verify" element={<ContractVerify />} />
             <Route path="/contract/:loanId" element={<ProtectedRoute><ContractView /></ProtectedRoute>} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

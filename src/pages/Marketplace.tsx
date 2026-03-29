@@ -103,16 +103,41 @@ const Marketplace = () => {
     }).eq('id', loanId);
 
     if (fullyFunded) {
-      // Disburse principal to borrower wallet
+      // Calculate fees deducted from borrower's disbursement
+      const platformFee = principal * 0.02;
+      const insuranceFee = principal * 0.01;
+      const netDisbursement = principal - platformFee - insuranceFee;
+
+      // Disburse net amount to borrower wallet
       const { data: borrower } = await supabase.from('users').select('wallet_balance').eq('id', loan.borrower_id).single();
-      const borrowerNewBalance = Number(borrower?.wallet_balance || 0) + principal;
+      const borrowerNewBalance = Number(borrower?.wallet_balance || 0) + netDisbursement;
       await supabase.from('users').update({ wallet_balance: borrowerNewBalance }).eq('id', loan.borrower_id);
+
+      // Log platform fee deduction
+      await supabase.from('wallet_transactions').insert({
+        user_id: loan.borrower_id,
+        transaction_type: 'withdrawal',
+        amount: platformFee,
+        balance_after: borrowerNewBalance,
+        description: `Platform fee (2%) deducted from loan disbursement`,
+      });
+
+      // Log insurance fee deduction
+      await supabase.from('wallet_transactions').insert({
+        user_id: loan.borrower_id,
+        transaction_type: 'withdrawal',
+        amount: insuranceFee,
+        balance_after: borrowerNewBalance,
+        description: `Insurance fee (1%) deducted from loan disbursement`,
+      });
+
+      // Log net disbursement
       await supabase.from('wallet_transactions').insert({
         user_id: loan.borrower_id,
         transaction_type: 'deposit',
-        amount: principal,
+        amount: netDisbursement,
         balance_after: borrowerNewBalance,
-        description: `Loan disbursement`,
+        description: `Loan disbursement (after 2% platform fee & 1% insurance fee)`,
       });
 
       // Generate contract
