@@ -341,8 +341,33 @@ Deno.serve(async (req) => {
     ${clausesHtml}
   </div>
 
+  <!-- Official Stamp & Seal -->
+  <div style="display:flex;justify-content:center;margin:30px 0;">
+    <div style="position:relative;width:280px;height:280px;display:flex;align-items:center;justify-content:center;">
+      <!-- Outer ring -->
+      <div style="position:absolute;width:260px;height:260px;border:4px solid ${loan.status === 'completed' || loan.status === 'paid' ? '#b71c1c' : '#2e7d32'};border-radius:50%;"></div>
+      <div style="position:absolute;width:240px;height:240px;border:2px solid ${loan.status === 'completed' || loan.status === 'paid' ? '#b71c1c' : '#2e7d32'};border-radius:50%;"></div>
+      <!-- Inner content -->
+      <div style="text-align:center;z-index:1;padding:10px;">
+        <p style="font-size:9px;font-weight:bold;color:${loan.status === 'completed' || loan.status === 'paid' ? '#b71c1c' : '#2e7d32'};margin:0;letter-spacing:3px;text-transform:uppercase;">P2P Secure-Lend Kenya</p>
+        <div style="margin:6px 0;">${leafSvg}</div>
+        ${loan.status === 'completed' || loan.status === 'paid'
+          ? `<p style="font-size:14px;font-weight:bold;color:#b71c1c;margin:4px 0;letter-spacing:2px;">EXPIRED</p>
+             <p style="font-size:8px;color:#b71c1c;margin:2px 0;font-weight:bold;">PAYMENT HONOURED BY BORROWER</p>`
+          : `<p style="font-size:14px;font-weight:bold;color:#2e7d32;margin:4px 0;letter-spacing:2px;">ACTIVE</p>
+             <p style="font-size:8px;color:#2e7d32;margin:2px 0;font-weight:bold;">DIGITALLY VERIFIED & SEALED</p>`
+        }
+        <hr style="border:none;border-top:1px solid ${loan.status === 'completed' || loan.status === 'paid' ? '#b71c1c' : '#2e7d32'};margin:6px 20px;"/>
+        <p style="font-size:8px;color:#555;margin:2px 0;">Issued: ${contractDate}</p>
+        <p style="font-size:8px;color:#555;margin:2px 0;">Due: ${dueDateStr}</p>
+        <p style="font-size:8px;color:#555;margin:2px 0;">ID: ${finalContractId.slice(0, 8)}...</p>
+        <p style="font-size:7px;color:${loan.status === 'completed' || loan.status === 'paid' ? '#b71c1c' : '#2e7d32'};margin:4px 0 0;letter-spacing:2px;text-transform:uppercase;">Official Digital Seal</p>
+      </div>
+    </div>
+  </div>
+
   <!-- QR Code & Verification -->
-  <div style="text-align:center;border-top:2px solid #2e7d32;padding-top:20px;margin-top:30px;">
+  <div style="text-align:center;border-top:2px solid #2e7d32;padding-top:20px;margin-top:10px;">
     <p style="font-size:11px;color:#666;margin:0 0 8px;">Scan the QR code below to verify the authenticity of this contract</p>
     <div style="display:inline-block;padding:8px;border:2px solid #2e7d32;border-radius:8px;">${qrSvg}</div>
      <p style="font-size:10px;color:#999;margin:8px 0 0;">Contract ID: ${finalContractId}</p>
