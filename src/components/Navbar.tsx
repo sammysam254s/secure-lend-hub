@@ -48,6 +48,8 @@ const Navbar = () => {
               )}
               <Link to="/wallet" className="hover:underline">Wallet</Link>
               <Link to="/contracts" className="hover:underline">Contracts</Link>
+              <Link to="/collateral-marketplace" className="hover:underline text-sm opacity-90">Auctions</Link>
+              <Link to="/collateral/check" className="hover:underline text-sm opacity-90">Check Collateral</Link>
               <span className="text-sm opacity-80">
                 {profile.username} ({profile.role})
               </span>
@@ -88,6 +90,8 @@ const Navbar = () => {
               )}
               <Link to="/wallet" className="block py-1 hover:underline" onClick={() => setMobileOpen(false)}>Wallet</Link>
               <Link to="/contracts" className="block py-1 hover:underline" onClick={() => setMobileOpen(false)}>Contracts</Link>
+              <Link to="/collateral-marketplace" className="block py-1 hover:underline text-sm opacity-90" onClick={() => setMobileOpen(false)}>Auctions</Link>
+              <Link to="/collateral/check" className="block py-1 hover:underline text-sm opacity-90" onClick={() => setMobileOpen(false)}>Check Collateral</Link>
               <div className="text-sm opacity-80 py-1">{profile.username} ({profile.role})</div>
               <Button variant="secondary" size="sm" onClick={() => { handleLogout(); setMobileOpen(false); }}>
                 <LogOut className="h-4 w-4 mr-1" /> Logout

@@ -14,10 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_items: {
+        Row: {
+          collateral_sale_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          collateral_sale_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          collateral_sale_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_collateral_sale_id_fkey"
+            columns: ["collateral_sale_id"]
+            isOneToOne: false
+            referencedRelation: "collateral_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collateral: {
         Row: {
           agent_verified_value: number | null
           brand_model: string
+          collateral_code: string | null
           created_at: string | null
           id: string
           item_type: string
@@ -31,6 +68,7 @@ export type Database = {
         Insert: {
           agent_verified_value?: number | null
           brand_model: string
+          collateral_code?: string | null
           created_at?: string | null
           id?: string
           item_type: string
@@ -44,6 +82,7 @@ export type Database = {
         Update: {
           agent_verified_value?: number | null
           brand_model?: string
+          collateral_code?: string | null
           created_at?: string | null
           id?: string
           item_type?: string
@@ -67,6 +106,74 @@ export type Database = {
             columns: ["verified_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collateral_sales: {
+        Row: {
+          borrower_id: string
+          buyer_id: string | null
+          collateral_id: string
+          created_at: string | null
+          id: string
+          loan_id: string
+          purchased_at: string | null
+          sale_price: number
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          borrower_id: string
+          buyer_id?: string | null
+          collateral_id: string
+          created_at?: string | null
+          id?: string
+          loan_id: string
+          purchased_at?: string | null
+          sale_price: number
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          borrower_id?: string
+          buyer_id?: string | null
+          collateral_id?: string
+          created_at?: string | null
+          id?: string
+          loan_id?: string
+          purchased_at?: string | null
+          sale_price?: number
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collateral_sales_borrower_id_fkey"
+            columns: ["borrower_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collateral_sales_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collateral_sales_collateral_id_fkey"
+            columns: ["collateral_id"]
+            isOneToOne: false
+            referencedRelation: "collateral"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collateral_sales_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
             referencedColumns: ["id"]
           },
         ]

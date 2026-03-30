@@ -18,6 +18,8 @@ import WalletPage from "./pages/Wallet";
 import ContractView from "./pages/ContractView";
 import ContractsList from "./pages/ContractsList";
 import ContractVerify from "./pages/ContractVerify";
+import CollateralCheck from "./pages/CollateralCheck";
+import CollateralMarketplace from "./pages/CollateralMarketplace";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
@@ -40,6 +42,8 @@ const App = () => (
             <Route path="/borrower/collateral-submit" element={<ProtectedRoute allowedRoles={['borrower']}><LoanApply /></ProtectedRoute>} />
             <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
             <Route path="/marketplace" element={<ProtectedRoute allowedRoles={['lender']}><Marketplace /></ProtectedRoute>} />
+            <Route path="/collateral-marketplace" element={<CollateralMarketplace />} />
+            <Route path="/collateral/check" element={<CollateralCheck />} />
             <Route path="/agent" element={<ProtectedRoute allowedRoles={['agent']}><AgentDashboard /></ProtectedRoute>} />
             <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />

@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Gavel } from 'lucide-react';
 import { formatKES, getStatusColor } from '@/lib/formatters';
 import AdminStats from '@/components/admin/AdminStats';
 import UsersTab from '@/components/admin/UsersTab';
 import PayoutsTab from '@/components/admin/PayoutsTab';
+import { toast } from 'sonner';
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -19,6 +20,7 @@ const AdminDashboard = () => {
   const [kyc, setKyc] = useState<any[]>([]);
   const [commissions, setCommissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [listingId, setListingId] = useState<string | null>(null);
 
   const fetchData = async () => {
     const [usersRes, loansRes, collateralRes, kycRes, commissionsRes] = await Promise.all([
@@ -43,6 +45,29 @@ const AdminDashboard = () => {
     fetchData();
   };
 
+  const handleListForSale = async (loan: any) => {
+    setListingId(loan.id);
+    const coll = collateral.find(c => c.id === loan.collateral_id);
+    if (!coll) { toast.error('Collateral not found'); setListingId(null); return; }
+
+    const salePrice = Number(loan.principal_amount) * 1.10;
+
+    const { data: existing } = await supabase.from('collateral_sales')
+      .select('id').eq('loan_id', loan.id).eq('status', 'listed').maybeSingle();
+    if (existing) { toast.info('Already listed for sale'); setListingId(null); return; }
+
+    await supabase.from('collateral_sales').insert({
+      collateral_id: loan.collateral_id,
+      loan_id: loan.id,
+      borrower_id: loan.borrower_id,
+      sale_price: salePrice,
+    });
+
+    toast.success(`Collateral listed for sale at ${formatKES(salePrice)}`);
+    setListingId(null);
+    fetchData();
+  };
+
   if (loading) return <Layout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></Layout>;
 
   const totalInvested = loans.reduce((s, l) => s + Number(l.funded_amount || 0), 0);
@@ -51,6 +76,7 @@ const AdminDashboard = () => {
   const lenderPlatformFees = activeLoans.filter(l => l.status === 'paid').reduce((s, l) => s + Number(l.principal_amount) * 0.02, 0);
   const totalPlatformFees = platformFees + lenderPlatformFees;
   const insurancePool = activeLoans.reduce((s, l) => s + Number(l.principal_amount) * 0.01, 0);
+  const overdueLoans = loans.filter(l => l.status === 'active');
 
   return (
     <Layout>
@@ -64,27 +90,24 @@ const AdminDashboard = () => {
             <TabsTrigger value="users" className="flex-1 text-xs sm:text-sm">Users</TabsTrigger>
             <TabsTrigger value="loans" className="flex-1 text-xs sm:text-sm">Loans</TabsTrigger>
             <TabsTrigger value="collateral" className="flex-1 text-xs sm:text-sm">Collateral</TabsTrigger>
+            <TabsTrigger value="defaults" className="flex-1 text-xs sm:text-sm">Defaults</TabsTrigger>
             <TabsTrigger value="kyc" className="flex-1 text-xs sm:text-sm">KYC</TabsTrigger>
             <TabsTrigger value="payouts" className="flex-1 text-xs sm:text-sm">Payouts</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users">
-            <UsersTab users={users} onRefresh={fetchData} />
-          </TabsContent>
+          <TabsContent value="users"><UsersTab users={users} onRefresh={fetchData} /></TabsContent>
 
           <TabsContent value="loans">
             <Card className="border-0 shadow-sm mt-4">
               <CardHeader><CardTitle className="text-lg">All Loans</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Amount</TableHead>
-                      <TableHead className="hidden sm:table-cell">Duration</TableHead>
-                      <TableHead>Funded</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="hidden sm:table-cell">Duration</TableHead>
+                    <TableHead>Funded</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
                     {loans.map(l => (
                       <TableRow key={l.id}>
@@ -105,19 +128,19 @@ const AdminDashboard = () => {
               <CardHeader><CardTitle className="text-lg">All Collateral</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="hidden sm:table-cell">Brand/Model</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="hidden sm:table-cell">Brand/Model</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Value</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
                     {collateral.map(c => (
                       <TableRow key={c.id}>
                         <TableCell className="text-sm">{c.item_type}</TableCell>
                         <TableCell className="hidden sm:table-cell text-sm">{c.brand_model}</TableCell>
+                        <TableCell className="text-xs font-mono">{c.collateral_code || '-'}</TableCell>
                         <TableCell className="text-sm">{formatKES(Number(c.market_value))}</TableCell>
                         <TableCell><Badge className={`${getStatusColor(c.status)} text-xs`}>{c.status}</Badge></TableCell>
                       </TableRow>
@@ -128,19 +151,56 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="defaults">
+            <Card className="border-0 shadow-sm mt-4">
+              <CardHeader><CardTitle className="text-lg">Defaulted Loans — List Collateral for Sale</CardTitle></CardHeader>
+              <CardContent className="overflow-x-auto">
+                {overdueLoans.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No active loans to process.</p>
+                ) : (
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead>Loan Amount</TableHead>
+                      <TableHead className="hidden sm:table-cell">Duration</TableHead>
+                      <TableHead>Sale Price (+10%)</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {overdueLoans.map(l => {
+                        const salePrice = Number(l.principal_amount) * 1.10;
+                        const isListing = listingId === l.id;
+                        return (
+                          <TableRow key={l.id}>
+                            <TableCell className="text-sm">{formatKES(Number(l.principal_amount))}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{l.duration_months}mo</TableCell>
+                            <TableCell className="text-sm font-semibold text-primary">{formatKES(salePrice)}</TableCell>
+                            <TableCell>
+                              <Button size="sm" className="h-7 text-xs" disabled={isListing} onClick={() => handleListForSale(l)}>
+                                {isListing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Gavel className="h-3 w-3 mr-1" />}
+                                List for Sale
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="kyc">
             <Card className="border-0 shadow-sm mt-4">
               <CardHeader><CardTitle className="text-lg">KYC Verifications</CardTitle></CardHeader>
               <CardContent className="overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="hidden sm:table-cell">ID Number</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden sm:table-cell">ID Number</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
                     {kyc.map(k => (
                       <TableRow key={k.id}>
@@ -170,9 +230,7 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="payouts">
-            <PayoutsTab commissions={commissions} users={users} onRefresh={fetchData} />
-          </TabsContent>
+          <TabsContent value="payouts"><PayoutsTab commissions={commissions} users={users} onRefresh={fetchData} /></TabsContent>
         </Tabs>
       </div>
     </Layout>
