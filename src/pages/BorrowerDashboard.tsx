@@ -276,6 +276,7 @@ const BorrowerDashboard = () => {
                     <TableHead>Type</TableHead>
                     <TableHead className="hidden sm:table-cell">Brand/Model</TableHead>
                     <TableHead>Value</TableHead>
+                    <TableHead className="hidden sm:table-cell">Code</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -285,9 +286,11 @@ const BorrowerDashboard = () => {
                       <TableCell className="text-sm">
                         {c.item_type}
                         <span className="block sm:hidden text-xs text-muted-foreground">{c.brand_model}</span>
+                        {(c as any).collateral_code && <span className="block sm:hidden text-xs font-mono text-primary">{(c as any).collateral_code}</span>}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm">{c.brand_model}</TableCell>
                       <TableCell className="text-sm">{formatKES(Number(c.market_value))}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-xs font-mono">{(c as any).collateral_code || '-'}</TableCell>
                       <TableCell><Badge className={`${getStatusColor(c.status)} text-xs`}>{c.status}</Badge></TableCell>
                     </TableRow>
                   ))}
