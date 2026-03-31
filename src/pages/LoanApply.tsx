@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, AlertTriangle, MapPin, CheckCircle2 } from 'lucide-react';
+import { Loader2, AlertTriangle, MapPin, CheckCircle2, Camera, X } from 'lucide-react';
 import { formatKES, calculateMaxLoanAmount, calculateTotalRepayment } from '@/lib/formatters';
 
 const ITEM_TYPES = ['Smartphone', 'Laptop', 'TV', 'Tablet', 'Camera', 'Other Electronics'];
@@ -22,14 +22,15 @@ const LoanApply = () => {
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  // Collateral fields
   const [itemType, setItemType] = useState('');
   const [brandModel, setBrandModel] = useState('');
   const [marketValue, setMarketValue] = useState('');
-
-  // Loan fields
   const [amount, setAmount] = useState('');
   const [duration, setDuration] = useState('');
+
+  // Image uploads
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     if (!profile) return;
@@ -43,14 +44,33 @@ const LoanApply = () => {
   const maxLoan = marketValue ? calculateMaxLoanAmount(Number(marketValue)) : 0;
   const totalRepayment = amount && duration ? calculateTotalRepayment(Number(amount), Number(duration)) : 0;
 
+  const handleImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (imageFiles.length + files.length > 5) {
+      setError('Maximum 5 images allowed');
+      return;
+    }
+    const newFiles = [...imageFiles, ...files];
+    setImageFiles(newFiles);
+    const previews = newFiles.map(f => URL.createObjectURL(f));
+    setImagePreviews(previews);
+  };
+
+  const removeImage = (idx: number) => {
+    const newFiles = imageFiles.filter((_, i) => i !== idx);
+    setImageFiles(newFiles);
+    setImagePreviews(newFiles.map(f => URL.createObjectURL(f)));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
+    if (imageFiles.length < 2) { setError('Please upload at least 2 images of the collateral'); return; }
     if (Number(amount) > maxLoan) { setError(`Max loan amount is ${formatKES(maxLoan)}`); return; }
     setError('');
     setLoading(true);
 
-    // 1. Create collateral as pending
+    // 1. Create collateral
     const { data: collateral, error: collErr } = await supabase.from('collateral').insert({
       user_id: profile.id,
       item_type: itemType,
@@ -61,7 +81,21 @@ const LoanApply = () => {
 
     if (collErr || !collateral) { setError(collErr?.message || 'Failed to submit collateral'); setLoading(false); return; }
 
-    // 2. Create loan tied to that collateral
+    // 2. Upload images
+    for (const file of imageFiles) {
+      const ext = file.name.split('.').pop();
+      const path = `${collateral.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('collateral-images').upload(path, file);
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from('collateral-images').getPublicUrl(path);
+        await (supabase as any).from('collateral_images').insert({
+          collateral_id: collateral.id,
+          image_url: urlData.publicUrl,
+        });
+      }
+    }
+
+    // 3. Create loan
     const { error: loanErr } = await supabase.from('loans').insert({
       borrower_id: profile.id,
       collateral_id: collateral.id,
@@ -71,7 +105,6 @@ const LoanApply = () => {
     });
 
     if (loanErr) {
-      // Rollback collateral
       await supabase.from('collateral').delete().eq('id', collateral.id);
       setError(loanErr.message);
       setLoading(false);
@@ -138,7 +171,6 @@ const LoanApply = () => {
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-              {/* Collateral section */}
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Collateral Details</p>
 
@@ -166,11 +198,34 @@ const LoanApply = () => {
                     </p>
                   )}
                 </div>
+
+                {/* Collateral Images */}
+                <div className="space-y-2">
+                  <Label>Collateral Images (min 2, max 5)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {imagePreviews.map((src, i) => (
+                      <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border">
+                        <img src={src} alt={`Collateral ${i + 1}`} className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removeImage(i)}
+                          className="absolute top-0 right-0 bg-destructive text-destructive-foreground rounded-bl-md p-0.5">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {imageFiles.length < 5 && (
+                      <label className="w-20 h-20 rounded-md border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
+                        <Camera className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground">Add</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageAdd} disabled={!kycVerified} />
+                      </label>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{imageFiles.length}/5 images uploaded {imageFiles.length < 2 && '(minimum 2 required)'}</p>
+                </div>
               </div>
 
               <hr />
 
-              {/* Loan section */}
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Loan Details</p>
 
@@ -206,7 +261,7 @@ const LoanApply = () => {
                 After submitting, you will need to visit an agent station with your physical item for verification before your loan is listed.
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading || !kycVerified || !itemType || !duration}>
+              <Button type="submit" className="w-full" disabled={loading || !kycVerified || !itemType || !duration || imageFiles.length < 2}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {loading ? 'Submitting...' : kycVerified ? 'Submit Application' : 'KYC Required'}
               </Button>
