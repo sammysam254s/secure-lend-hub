@@ -110,6 +110,90 @@ export type Database = {
           },
         ]
       }
+      collateral_images: {
+        Row: {
+          collateral_id: string
+          created_at: string | null
+          id: string
+          image_url: string
+        }
+        Insert: {
+          collateral_id: string
+          created_at?: string | null
+          id?: string
+          image_url: string
+        }
+        Update: {
+          collateral_id?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collateral_images_collateral_id_fkey"
+            columns: ["collateral_id"]
+            isOneToOne: false
+            referencedRelation: "collateral"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collateral_orders: {
+        Row: {
+          agent_id: string | null
+          buyer_id: string
+          collateral_sale_id: string
+          created_at: string | null
+          id: string
+          shipping_address: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          buyer_id: string
+          collateral_sale_id: string
+          created_at?: string | null
+          id?: string
+          shipping_address: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          buyer_id?: string
+          collateral_sale_id?: string
+          created_at?: string | null
+          id?: string
+          shipping_address?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collateral_orders_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collateral_orders_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collateral_orders_collateral_sale_id_fkey"
+            columns: ["collateral_sale_id"]
+            isOneToOne: false
+            referencedRelation: "collateral_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collateral_sales: {
         Row: {
           borrower_id: string

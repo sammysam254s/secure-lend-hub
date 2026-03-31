@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle, XCircle, Pencil, User, Search, ShieldCheck, Package } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2, CheckCircle, XCircle, Pencil, User, Search, ShieldCheck, Package, Truck } from 'lucide-react';
 import { formatKES, calculateMaxLoanAmount, getStatusColor } from '@/lib/formatters';
 import { toast } from 'sonner';
 
@@ -33,6 +34,9 @@ const AgentDashboard = () => {
   const [releaseResult, setReleaseResult] = useState<any>(null);
   const [releasing, setReleasing] = useState(false);
 
+  // Shipments tab state
+  const [shipments, setShipments] = useState<any[]>([]);
+
   const fetchData = async () => {
     const { data } = await supabase
       .from('collateral')
@@ -45,10 +49,25 @@ const AgentDashboard = () => {
       .order('created_at', { ascending: true });
 
     setItems(data || []);
+
+    // Fetch shipments assigned to this agent
+    if (profile) {
+      const { data: shipmentsData } = await (supabase as any)
+        .from('collateral_orders')
+        .select(`
+          *,
+          collateral_sales(*, collateral(item_type, brand_model, collateral_code)),
+          buyer:users!collateral_orders_buyer_id_fkey(username, email, phone_number, first_name, last_name)
+        `)
+        .eq('agent_id', profile.id)
+        .order('created_at', { ascending: false });
+      setShipments(shipmentsData || []);
+    }
+
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [profile]);
 
   const handleApprove = async (collateral: any) => {
     setActionLoading(collateral.id);
@@ -64,6 +83,7 @@ const AgentDashboard = () => {
       market_value: finalValue,
       verification_date: new Date().toISOString(),
       collateral_code: collateralCode,
+      verified_by: profile?.id || null,
     }).eq('id', collateral.id);
 
     if (collErr) { toast.error(collErr.message); setActionLoading(null); return; }
@@ -76,9 +96,7 @@ const AgentDashboard = () => {
       await supabase.from('loans').update({ 
         status: 'listed',
         principal_amount: cappedPrincipal,
-      })
-        .eq('id', loan.id)
-        .eq('status', 'pending_collateral');
+      }).eq('id', loan.id).eq('status', 'pending_collateral');
 
       if (profile?.id) {
         const commissionAmount = finalValue * 0.005;
@@ -157,6 +175,15 @@ const AgentDashboard = () => {
     setReleaseCode('');
   };
 
+  // Shipment actions
+  const handleUpdateShipment = async (orderId: string, newStatus: string) => {
+    setActionLoading(orderId);
+    await (supabase as any).from('collateral_orders').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', orderId);
+    toast.success(`Order marked as ${newStatus}`);
+    setActionLoading(null);
+    fetchData();
+  };
+
   if (loading) return <Layout><div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div></Layout>;
 
   return (
@@ -165,9 +192,10 @@ const AgentDashboard = () => {
         <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Agent Dashboard</h1>
 
         <Tabs defaultValue="verify">
-          <TabsList className="mb-4 w-full grid grid-cols-2">
+          <TabsList className="mb-4 w-full grid grid-cols-3">
             <TabsTrigger value="verify" className="text-xs sm:text-sm"><ShieldCheck className="h-4 w-4 mr-1" /> Verify</TabsTrigger>
             <TabsTrigger value="release" className="text-xs sm:text-sm"><Package className="h-4 w-4 mr-1" /> Release</TabsTrigger>
+            <TabsTrigger value="shipments" className="text-xs sm:text-sm"><Truck className="h-4 w-4 mr-1" /> Shipments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="verify">
@@ -340,6 +368,75 @@ const AgentDashboard = () => {
                       })()}
                     </CardContent>
                   </Card>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="shipments">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Shipment Orders</CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                {shipments.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No shipment orders assigned to you.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {shipments.map((order: any) => {
+                      const coll = order.collateral_sales?.collateral;
+                      const buyer = order.buyer;
+                      const isActioning = actionLoading === order.id;
+                      return (
+                        <Card key={order.id} className="border shadow-none">
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-semibold">{coll?.item_type} - {coll?.brand_model}</p>
+                                <p className="text-xs font-mono text-muted-foreground">{coll?.collateral_code}</p>
+                              </div>
+                              <Badge className={`text-xs ${
+                                order.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                'bg-green-100 text-green-700'
+                              }`}>{order.status}</Badge>
+                            </div>
+
+                            <div className="text-sm space-y-1">
+                              <p className="text-muted-foreground text-xs">Buyer</p>
+                              <p>{buyer?.first_name} {buyer?.last_name} ({buyer?.username})</p>
+                              <p className="text-xs">{buyer?.email} | {buyer?.phone_number}</p>
+                            </div>
+
+                            <div className="text-sm">
+                              <p className="text-muted-foreground text-xs">Ship To</p>
+                              <p className="text-sm">{order.shipping_address}</p>
+                            </div>
+
+                            <div className="flex gap-2">
+                              {order.status === 'pending' && (
+                                <Button size="sm" className="flex-1" disabled={isActioning}
+                                  onClick={() => handleUpdateShipment(order.id, 'shipped')}>
+                                  {isActioning ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Truck className="h-3 w-3 mr-1" />}
+                                  Mark as Shipped
+                                </Button>
+                              )}
+                              {order.status === 'shipped' && (
+                                <Button size="sm" className="flex-1" disabled={isActioning}
+                                  onClick={() => handleUpdateShipment(order.id, 'delivered')}>
+                                  {isActioning ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <CheckCircle className="h-3 w-3 mr-1" />}
+                                  Mark as Delivered
+                                </Button>
+                              )}
+                              {order.status === 'delivered' && (
+                                <p className="text-sm text-green-600">✅ Delivered</p>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 )}
               </CardContent>
             </Card>
