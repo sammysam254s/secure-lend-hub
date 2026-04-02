@@ -50,6 +50,7 @@ const Marketplace = () => {
     const amount = Number(investAmount);
     const lenderBalance = Number(profile.wallet_balance || 0);
 
+    // Minimum investment amount is KES 1
     if (amount < 1) {
       setInvestError('Minimum investment amount is KES 1.');
       setInvesting(false);
