@@ -50,6 +50,12 @@ const Marketplace = () => {
     const amount = Number(investAmount);
     const lenderBalance = Number(profile.wallet_balance || 0);
 
+    if (amount < 1) {
+      setInvestError('Minimum investment amount is KES 1.');
+      setInvesting(false);
+      return;
+    }
+
     if (amount > lenderBalance) {
       setInvestError('Insufficient wallet balance. Please deposit funds first.');
       setInvesting(false);
@@ -225,7 +231,7 @@ const Marketplace = () => {
                               </div>
                               <div className="space-y-2">
                                 <Label>Investment Amount (KES)</Label>
-                                <Input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)} max={principal - funded} placeholder="Enter amount" />
+                                <Input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)} min={1} max={principal - funded} placeholder="Enter amount (min KES 1)" />
                               </div>
                               <Button className="w-full" disabled={investing || !investAmount} onClick={() => handleInvest(loan.id)}>
                                 {investing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
